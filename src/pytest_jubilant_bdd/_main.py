@@ -171,33 +171,33 @@ def is_deployed(context: Context, app: str, model: str | None) -> None:
 
 @then(
     parsers.re(
-        r"the workload status for (?P<target>app|unit) '(?P<name>[^'])' is '(?P<status>%s)'"
+        r"the workload status for (?P<type_>app|unit) '(?P<target>[^'])' is '(?P<status>%s)'"
         % "|".join(WORKLOAD_STATUSES)
     )
 )
 def assert_workload_status(
-    context: Context, target: str, name: str, status: str
+    context: Context, type_: str, target: str, status: str
 ) -> None:
     """Assert the workload status of an application or unit."""
-    if target == "app":
-        assert context.get_app(name).app_status.current == status
+    if type_ == "app":
+        assert context.get_app(target).app_status.current == status
     else:  # target is a unit.
-        assert context.get_unit(name).workload_status.current == status
+        assert context.get_unit(target).workload_status.current == status
 
 
 @then(
     parsers.re(
-        r"the workload status message for (?P<target>app|unit) '(?P<name>[^'])' is '(?P<message>[^']*)'"
+        r"the workload status message for (?P<type_>app|unit) '(?P<target>[^'])' is '(?P<message>[^']*)'"
     )
 )
 def assert_workload_status_message(
-    context: Context, target: str, name: str, message: str
+    context: Context, type_: str, target: str, message: str
 ) -> None:
     """Assert the workload status of an application or unit."""
-    if target == "app":
-        assert context.get_app(name).app_status.message == message
+    if type_ == "app":
+        assert context.get_app(target).app_status.message == message
     else:  # target is a unit.
-        assert context.get_unit(name).workload_status.message == message
+        assert context.get_unit(target).workload_status.message == message
 
 
 # ---
