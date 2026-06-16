@@ -235,7 +235,7 @@ def assert_workload_status(
 
 @then(
     parsers.re(
-        r"the workload status message for (?P<type_>app|unit) '(?P<target>[^'])' is '(?P<message>[^']*)'"
+        r"the workload status message for (?P<type_>app|unit) '(?P<target>[^']+)' is '(?P<message>[^']*)'"
     )
 )
 def assert_workload_status_message(
