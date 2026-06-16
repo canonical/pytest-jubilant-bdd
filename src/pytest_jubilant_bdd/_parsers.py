@@ -14,8 +14,9 @@
 
 """Custom ``pytest-bdd`` parsers."""
 
-__all__ = ["flexible"]
+__all__ = ["flexible", "make_dict", "make_list"]
 
+import ast
 import re
 from typing import Any
 
@@ -173,3 +174,27 @@ class flexible(StepParser):  # noqa N802
                 text,
             ),
         )
+
+
+def autocast(value: str) -> Any:
+    """Autocast value to the 'best-fitting' Python type.
+
+    Args:
+        value: Value to cast to the best-fitting Python type.
+    """
+    try:
+        return ast.literal_eval(value)
+    except (ValueError, SyntaxError):
+        return value
+
+
+def make_dict(value: str) -> dict[str, Any]:
+    """Make a Python dictionary ``{'k': 'v'}`` from string ``k=v``."""
+    matches = re.findall(r'(\w+)=("[^"]*"|\S+)', value)
+    return {k: autocast(v.strip('"')) for k, v in matches}
+
+
+def make_list(value: str) -> list[Any]:
+    """Make a Python list ``['n1', 'n2', 'n3']`` from a serial list ``n1, n2, and n3``."""
+    matches = re.findall(r"'([^']+)'", value)
+    return [autocast(match) for match in matches]
