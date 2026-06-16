@@ -21,12 +21,56 @@ from typing import Any
 
 from pytest_bdd.parsers import StepParser
 
-_OPTIONAL_REGEX = re.compile(r"\[(.+?)]")
-"""Matches any string encapsulated in brackets.
+
+_FIND_OPTIONAL_REGEX = re.compile(r"%.*?%|\[((?:[^]%]|%.*?%)+?)]")
+"""Regular expression that matches any clause encapsulated in square brackets (``[`` and ``]``).
+
+Does not match any bracket characters wrapped surrounded with percent signs (``%``).
+
+Notes:
+    This pattern uses a "Match and Skip" strategy to extract text inside square brackets 
+    [like this] while safely ignoring any closing brackets "]" that are trapped inside percent 
+    blocks %...%.
+    
+    Breakdown:
+
+    %.*?%               -> SKIP SIDE: Matches and consumes an entire %block% so the engine 
+                           skips looking for brackets inside it. No capture group here.
+    |                   -> OR
+    \[                  -> MATCH SIDE: Matches a literal opening square bracket.
+    (                   -> START CAPTURE GROUP 1: The text we actually want to extract.
+      (?:               -> Non-capturing group to evaluate inner contents step-by-step:
+        [^\]%]          -> Option A: Match any character that is NOT a closing bracket "]" or "%".
+        |               -> OR
+        %.*?%           -> Option B: Consume an entire nested %block% as a single unit, 
+                           preventing internal patterns from triggering a premature cut-off.
+      )+?               -> Repeat these options lazily, matching as little as possible...
+    )                   -> END CAPTURE GROUP 1.
+    \]                  -> ...until hitting the true literal closing square bracket.
 
 Examples:
     >>> "[from channel 'latest/stable']"
     >>> "[on base 'ubuntu@24.04']"
+    >>> "%(?P<units>'[^']+')%"  # Does not match.
+"""
+
+_REPLACE_BRACES_REGEX = re.compile(r"%.*?%|\{(\w+)}")
+"""Regular expression that replaces braces (``{`` and ``}``) in a Gherkin step template.
+
+Used to substitute text in Gherkin step with a named capture group.
+"""
+
+_STRIP_OPTIONAL_REGEX = re.compile(r"%.*?%|(\s*\[((?:[^]%]|%.*?%)+?)])")
+"""Regular expression that matches optional clauses from a Gherkin step template for extraction.
+
+Functionally similar to ``_FIND_OPTIONAL_REGEX``, but includes 
+square brackets and optional whitespace in capture group 1.
+"""
+
+_STRIP_PERCENT_SIGN_REGEX = re.compile(r"%(.*?)%")
+"""Regular express that matches the content in between two percent signs.
+
+Used to strip percent signs before assembling the final regex for matching Gherkin steps. 
 """
 
 
@@ -92,17 +136,21 @@ class flexible(StepParser):  # noqa N802
         """Compile a Gherkin step into multiple regexes.
 
         Args:
-            pattern: ``pytest-bdd`` step pattern to compile into regexes.
+            pattern: ``pytest-bdd`` step pattern to compile into regular expressions.
         """
-        parts = _OPTIONAL_REGEX.split(pattern)
-
-        required_text = parts[0].strip()  # Required text comes before optional clauses.
-        required_regex = re.compile(self._build_regex(required_text))
-
-        optional_text = [parts[i] for i in range(1, len(parts), 2)]
+        optional_text = [
+            match for match in _FIND_OPTIONAL_REGEX.findall(pattern) if match
+        ]
         optional_regexes = [
             re.compile(self._build_regex(optional)) for optional in optional_text
         ]
+
+        # The lambda checks if group 1 matched ([] block), then replace with nothing "".
+        # If group 1 didn't match, that means group 0 (% block) matched, so return it untouched.
+        required_text = _STRIP_OPTIONAL_REGEX.sub(
+            lambda match: "" if match.group(1) else match.group(0), pattern
+        )
+        required_regex = re.compile(self._build_regex(required_text))
 
         return required_regex, optional_regexes
 
@@ -114,4 +162,14 @@ class flexible(StepParser):  # noqa N802
         Args:
             `text`: Text containing ``pytest-bdd`` placeholders.
         """
-        return re.sub(r"\\{(\w+)\\}", r"(?P<\1>[^']+)", re.escape(text))
+        # Match content between two % signs, and keep only the content (\1)
+        return _STRIP_PERCENT_SIGN_REGEX.sub(
+            r"\1",
+            # Replace braces not encapsulated by two % signs with named capture group.
+            _REPLACE_BRACES_REGEX.sub(
+                lambda match: (
+                    f"(?P<{name}>[^']+)" if (name := match.group(1)) else match.group(0)
+                ),
+                text,
+            ),
+        )
