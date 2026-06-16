@@ -127,9 +127,9 @@ class Context:
         models: Mapping that tracks models in the testing context.
     """
 
-    action_results: stack[Task] = field(default_factory=stack)
-    exec_results: stack[Task] = field(default_factory=stack)
-    models: ModelMapping = field(default_factory=ModelMapping)
+    action_results: stack[Task] = field(default_factory=stack, init=False)
+    exec_results: stack[Task] = field(default_factory=stack, init=False)
+    models: ModelMapping = field(default_factory=ModelMapping, init=False)
 
     def get_juju(self, model: str | None = None) -> Juju:
         """Get a Juju CLI harness.
