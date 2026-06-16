@@ -219,7 +219,7 @@ def run_exec(
 
 @then(
     parsers.re(
-        r"the workload status for (?P<type_>app|unit) '(?P<target>[^'])' is '(?P<status>%s)'"
+        r"the workload status for (?P<type_>app|unit) '(?P<target>[^']+)' is '(?P<status>%s)'"
         % "|".join(WORKLOAD_STATUSES)
     )
 )
