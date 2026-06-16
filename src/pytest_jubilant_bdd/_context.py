@@ -122,16 +122,33 @@ class Context:
     """Object to track and control a testing context.
 
     Attributes:
-        juju: Harness for interfacing with the Juju CLI.
         action_results: Stack that tracks the results of ``juju run``.
         exec_results: Stack that tracks the results of ``juju exec``.
         models: Mapping that tracks models in the testing context.
     """
 
-    juju: Juju = Juju()
     action_results: stack[Task] = field(default_factory=stack)
     exec_results: stack[Task] = field(default_factory=stack)
     models: ModelMapping = field(default_factory=ModelMapping)
+
+    def get_juju(self, model: str | None = None) -> Juju:
+        """Get a Juju CLI harness.
+
+        Args:
+            model:
+                Name of the model that the created harness will operate on.
+                If ``None``, the harness will operate on the current model
+                the CLI client is switched to.
+
+        Raises:
+            ModelNotFoundError:
+                Raised if a model name is provided, but the model does not
+                exist in the current testing context.
+        """
+        if model:
+            return self.models[model]
+
+        return Juju()
 
     def get_app(self, app: str, /, *, model: str | None = None) -> AppStatus:
         """Get an application.

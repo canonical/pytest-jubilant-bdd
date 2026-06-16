@@ -110,10 +110,7 @@ def _deploy(
     base: str | None = None,
 ) -> None:
     """Base function to deploy a charm."""
-    if model:
-        juju = context.models[model]
-    else:  # Deploy in most recently created model.
-        juju = context.juju
+    juju = context.get_juju(model)
 
     juju.deploy(charm, app, base=base, channel=channel)
 
@@ -121,7 +118,9 @@ def _deploy(
 @given(parsers.parse("I integrate '{app_one}' with '{app_two}'"))
 def integrate(context: Context, app_one: str, app_two: str) -> None:
     """Integrate two applications together."""
-    context.juju.integrate(app_one, app_two)
+    juju = context.get_juju()
+
+    juju.integrate(app_one, app_two)
 
 
 @given(parsers.parse("model '{model}' exists"))
