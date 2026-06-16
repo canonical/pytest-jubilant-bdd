@@ -150,74 +150,118 @@ class Context:
 
         return Juju()
 
-    def get_app(self, app: str, /, *, model: str | None = None) -> AppStatus:
-        """Get an application.
+    def get_apps(self, model_names: Iterable[str] | None = None) -> dict[str, AppStatus]:
+        """Get applications.
 
         Args:
-            app: Name of the application.
-            model: Name of the model the application is deployed to.
+            model_names:
+                Get all applications that belong to the provided model names.
+                If no model names are provided, then all applications are returning.
 
         Raises:
-            AppNotFoundError:
-                Raised if the requested application is not found in any model.
-            TooManyDeployedAppsError:
-                Raised if multiple applications share the same name in the current
-                testing context and no ``model`` was provided.
+            TooManyDeployedApplications:
+                Raised if multiple applications share the same name in the returned
+                ``model_names`` search.
         """
-        if model is not None:
-            apps = self.models[model].status().apps
-            try:
-                return apps[app]
-            except KeyError:
-                raise AppNotFoundError(
-                    f"App not found: '{app}' is not deployed in model '{model}'. "
-                    f"Available apps: {', '.join(f'{app_}' for app_ in apps)}"
-                ) from None
+        models = [self.models[m] for m in model_names] if model_names else self.models.values()
 
-        result = None
-        seen: dict[str, str] = {}
-        for model_name, model_ in self.models.items():
-            status = model_.status()
-
-            if isinstance(result, AppStatus):
+        result: dict[str, AppStatus] = {}
+        for model in models:
+            apps = model.status().apps
+            if intersection := set(result) & set(apps):
                 raise TooManyDeployedAppsError(
-                    f"App '{app}' is already present in model '{seen[app]}'. "
-                    f"Provide a `model` name to get the app from a specific model"
+                    f"App name(s) '{intersection}' {'is' if len(intersection) == 1 else 'are'} "
+                    f"used multiple times in the current testing context. Either narrow your "
+                    f"application name search or ensure that you use a unique name for each "
+                    f"deployed application."
                 ) from None
 
-            if app in status.apps:
-                result = status.apps[app]
-                seen[app] = model_name
-
-        if result is None:
-            raise AppNotFoundError(
-                f"App not found: '{app}' is not deployed in any models"
-            ) from None
+            result.update(apps)
 
         return result
 
-    def get_unit(self, unit: str, /, *, model: str | None = None) -> UnitStatus:
-        """Get a unit.
+    def get_app(self, app_name: str, /, *, model_name: str | None = None) -> AppStatus:
+        """Get an application.
 
         Args:
-            unit: Name of the unit.
-            model: Name of the model the unit is deployed in.
+            app_name: Name of the application.
+            model_name: Name of the model the application is deployed to.
 
         Raises:
             AppNotFoundError:
                 Raised if the requested application is not found in any model.
             TooManyDeployedAppsError:
                 Raised if multiple applications share the same name in the current
-                testing context and no ``model`` was provided.
+                testing context and no ``model_name`` was provided.
+        """
+        args = []
+        if model_name:
+            args.append(model_name)
+
+        apps = self.get_apps(*args)
+        try:
+            return apps[app_name]
+        except KeyError:
+            raise AppNotFoundError(
+                f"App not found: '{app_name}' is not deployed"
+                f"{f' in model \'{model_name}\'' if model_name else ''}."
+                f"Available apps: {', '.join(f'{app_}' for app_ in apps)}"
+            ) from None
+
+    def get_models(self, model_names: Iterable[str] | None = None) -> dict[str, Juju]:
+        """Get models.
+
+        Args:
+            model_names: Models to retrieve.
+
+        Raises:
+            ModelNotFoundError: Raised if a provided model name does not exist.
+        """
+        if model_names:
+            return {model: self.models[model] for model in model_names}
+        else:
+            return dict(self.models)
+
+    def get_units(self, model_names: Iterable[str] | None = None) -> dict[str, UnitStatus]:
+        """Get units.
+
+        Args:
+            model_names:
+                Get all units that belong to the provided model names.
+                If no model names are provided, then all applications are returning.
+
+        Raises:
+            TooManyDeployedApplications:
+                Raised if multiple applications share the same name in the returned
+                ``model_names`` search.
+        """
+        apps = self.get_apps(model_names)
+        return {name: unit for app in apps.values() for name, unit in app.units.items()}
+
+    def get_unit(self, unit_name: str, /, *, model_name: str | None = None) -> UnitStatus:
+        """Get a unit.
+
+        Args:
+            unit_name: Name of the unit.
+            model_name: Name of the model the unit is deployed in.
+
+        Raises:
+            TooManyDeployedAppsError:
+                Raised if multiple applications share the same name in the current
+                testing context and no ``model_name`` was provided.
             UnitNotFoundError:
                 Raised if the requested unit is not found under its application namespace.
         """
-        app_name = unit.split("/")[0]
-        app = self.get_app(app_name, model=model)
+        args = []
+        if model_name:
+            args.append(model_name)
+
+        units = self.get_units(*args)
         try:
-            return app.units[unit]
+            return units[unit_name]
         except KeyError:
             raise UnitNotFoundError(
-                f"Unit not found: '{unit}' is not deployed in app '{app_name}'. "
-                f"Available units: {', '.join(f'{unit_}' for unit_ in app.units)}"
+                f"Unit not found: '{unit_name}' is not deployed"
+                f"{f' in model \'{model_name}\'' if model_name else ''}. "
+                f"Available units: {', '.join(f'{unit_}' for unit_ in units)}"
             ) from None
