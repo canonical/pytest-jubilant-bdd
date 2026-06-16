@@ -33,3 +33,7 @@ class TooManyDeployedAppsError(Exception):
 
 class UnitNotFoundError(Exception):
     """Error raised if a unit is not found."""
+
+
+class WaitError(Exception):
+    """Error when :meth:`Context.wait`'s ``error`` callable returns ``True``."""

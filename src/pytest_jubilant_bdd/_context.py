@@ -15,8 +15,9 @@
 """Track and control testing contexts."""
 
 import secrets
+import time
 from collections import deque
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
 
 from jubilant import Juju, Task
@@ -27,6 +28,7 @@ from ._errors import (
     ModelNotFoundError,
     TooManyDeployedAppsError,
     UnitNotFoundError,
+    WaitError,
 )
 
 
@@ -122,11 +124,15 @@ class Context:
     """Object to track and control a testing context.
 
     Attributes:
+        wait_timeout:
+            The default timeout for :meth:`wait` (in seconds)
+            if that method's ``timeout`` parameter is not specified.
         action_results: Stack that tracks the results of ``juju run``.
         exec_results: Stack that tracks the results of ``juju exec``.
         models: Mapping that tracks models in the testing context.
     """
 
+    wait_timeout: float = 3 * 60.0
     action_results: stack[Task] = field(default_factory=stack, init=False)
     exec_results: stack[Task] = field(default_factory=stack, init=False)
     models: ModelMapping = field(default_factory=ModelMapping, init=False)
@@ -265,3 +271,63 @@ class Context:
                 f"{f' in model \'{model_name}\'' if model_name else ''}. "
                 f"Available units: {', '.join(f'{unit_}' for unit_ in units)}"
             ) from None
+
+    def wait(
+        self,
+        ready: Callable[["Context"], bool],
+        *,
+        error: Callable[["Context"], bool] | None = None,
+        delay: float = 1.0,
+        timeout: float | None = None,
+        successes: int = 3,
+    ) -> None:
+        """Wait until ``ready(context)`` returns ``True``.
+
+        This method will repeatably poll the existing context (waiting *delay* seconds between
+        each call), and will successfully exit after the *ready* callable returns ``True`` for
+        *successes* times in a row.
+
+        Args:
+            ready:
+                Callable that takes a :class:`Context` object and returns ``True`` when the
+                wait should be considered ready. The callable must return ``True`` *successes*
+                times in a row before ``wait`` will return.
+            error:
+                Callable that takes a :class:`Context` object and returns ``True`` when ``wait``
+                should raise an error (:class:`WaitError`).
+            delay: Delay in seconds between :class:`Context` polls.
+            timeout:
+                Overall timeout in seconds; :class:`TimeoutError` is raised if this
+                is reached. If not specified, uses the *wait_timeout* specified when the
+                testing context was created.
+            successes: Number of times *ready* must return ``True`` for the wait to succeed.
+
+        Raises:
+            TimeoutError:
+                If the *timeout* is reached. A string representation
+                of the last status, if any, is added as an exception note.
+            WaitError:
+                If the *error* callable returns ``True``. A string representation
+                of the last status is added as an exception note.
+        """
+        if timeout is None:
+            timeout = self.wait_timeout
+
+        success_count = 0
+        start_time = time.monotonic()
+        while time.monotonic() - start_time < timeout:
+            if error is not None and error(self):
+                name = getattr(error, '__qualname__', repr(error))
+                raise WaitError(f"Wait error function '{name}' returned `True`")
+
+            if ready(self):
+                success_count += 1
+                if success_count >= successes:
+                    return
+            else:
+                success_count = 0
+
+            time.sleep(delay)
+
+        name = getattr(ready, "__qualname__", repr(ready))
+        raise TimeoutError(f"Wait timed out for function '{name}' after {timeout}s")
