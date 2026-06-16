@@ -166,6 +166,54 @@ def is_deployed(context: Context, app: str, model: str | None) -> None:
         )
 
 
+# When steps - Actions
+
+
+@when(
+    flexible(
+        r"I run action '{action}' on %units? (?P<units>(?:'([^']+)'(?:, (?:and )?|and )?)+)% "
+        "[with parameters '{params}'] "
+        "[in model '{model}'] "
+    ),
+    converters={"units": make_list, "params": make_dict},
+)
+def run_action(
+    context: Context,
+    action: str,
+    units: list[str],
+    params: Mapping[str, Any] | None,
+    model: str | None,
+) -> None:
+    """Run an action on one or more units."""
+    juju = context.get_juju(model)
+
+    for unit in units:
+        result = juju.run(unit, action, params=params)
+        context.action_results.push(result)
+
+
+@when(
+    flexible(
+        "I execute '{command}' on %(?P<type_>machines?|units?) (?P<targets>(?:'([^']+)'(?:, (?:and )?|and )?)+)% "
+        "[in model '{model}']"
+    ),
+    converters={"targets": make_list},
+)
+def run_exec(
+    context: Context,
+    command: str,
+    type_: str,
+    targets: list[str | int],
+    model: str | None,
+) -> None:
+    """Run remote commands on provided targets."""
+    juju = context.get_juju(model)
+
+    for target in targets:
+        result = juju.exec(command, **{type_.rstrip("s"): target})
+        context.exec_results.push(result)
+
+
 # Then steps - Attestation and verification.
 
 
