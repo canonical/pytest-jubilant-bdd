@@ -18,15 +18,17 @@
 __all__ = ["Context"]
 
 import os
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import pytest
-from pytest_bdd import given, parsers, then
+from pytest_bdd import given, parsers, then, when
 
 from ._constants import WORKLOAD_STATUSES
 from ._context import Context
 from ._errors import AppNotFoundError, CharmNotFoundError, TooManyDeployedAppsError
-from ._parsers import flexible
+from ._parsers import flexible, make_list, make_dict
 
 # ---
 # `pytest` fixtures.
@@ -54,7 +56,10 @@ def add_model(context: Context, model: str) -> None:
 
 @given(
     flexible(
-        "I deploy '{app}' `in model '{model}'` [from channel '{channel}'] [on base '{base}']"
+        "I deploy '{app}' "
+        "[in model '{model}'] "
+        "[from channel '{channel}'] "
+        "[on base '{base}']"
     )
 )
 def deploy(
@@ -71,7 +76,9 @@ def deploy(
 @given(
     flexible(
         "I deploy '{app}' from a local charm "
-        "[located at '{path}'] [in model '{model}'] [on base '{base}']"
+        "[located at '{path}'] "
+        "[in model '{model}'] "
+        "[on base '{base}']"
     ),
     converters={"path": lambda v: Path(v) if v is not None else v},
 )
