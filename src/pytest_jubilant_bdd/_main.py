@@ -72,9 +72,14 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 @pytest.fixture(scope="session")
-def context() -> Context:
+def context(request: pytest.FixtureRequest) -> Iterator[Context]:
     """Track the testing context of a ``pytest`` session."""
-    return Context()
+    context = Context(wait_timeout=request.config.getoption(WAIT_TIMEOUT_FLAG_NAME))
+
+    yield context
+
+    if not request.config.getoption(NO_TEARDOWN_FLAG_NAME):
+        context.models.destroy(destory_storage=True, force=True)
 
 
 # ---
