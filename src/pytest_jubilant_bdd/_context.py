@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from jubilant import Juju, Task
 from jubilant.statustypes import AppStatus, UnitStatus
 
+from ._constants import DEFAULT_WAIT_TIMEOUT
 from ._errors import (
     AppNotFoundError,
     ModelNotFoundError,
@@ -132,7 +133,7 @@ class Context:
         models: Mapping that tracks models in the testing context.
     """
 
-    wait_timeout: float = 3 * 60.0
+    wait_timeout: float = DEFAULT_WAIT_TIMEOUT
     action_results: stack[Task] = field(default_factory=stack, init=False)
     exec_results: stack[Task] = field(default_factory=stack, init=False)
     models: ModelMapping = field(default_factory=ModelMapping, init=False)

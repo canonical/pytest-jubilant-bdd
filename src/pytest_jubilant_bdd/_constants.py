@@ -14,4 +14,9 @@
 
 """Constants used in ``pytest-jubilant-bdd``."""
 
+NO_TEARDOWN_FLAG_NAME = "--juju-bdd-no-teardown"
+WAIT_TIMEOUT_FLAG_NAME = "--juju-bdd-wait-timeout"
+
+DEFAULT_WAIT_TIMEOUT = 3 * 60.0
+
 WORKLOAD_STATUSES = {"active", "blocked", "error", "maintenance", "waiting"}

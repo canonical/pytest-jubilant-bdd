@@ -18,17 +18,53 @@
 __all__ = ["Context"]
 
 import os
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
 import pytest
 from pytest_bdd import given, parsers, then, when
 
-from ._constants import WORKLOAD_STATUSES
+from ._constants import (
+    DEFAULT_WAIT_TIMEOUT,
+    WORKLOAD_STATUSES,
+    NO_TEARDOWN_FLAG_NAME,
+    WAIT_TIMEOUT_FLAG_NAME,
+)
 from ._context import Context
 from ._errors import AppNotFoundError, CharmNotFoundError, TooManyDeployedAppsError
 from ._parsers import flexible, make_list, make_dict
+
+# ---
+# `pytest` hooks.
+# ---
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Register ``pytest-jubilant-bdd``-specific command-line options.
+
+    Args:
+        parser: The :class:`pytest.Parser` object for this ``pytest-jubilant-bdd`` session.
+
+    Notes:
+        - Upstream ``pytest_configure`` hook documentation:
+          https://docs.pytest.org/en/stable/reference/reference.html#pytest.hookspec.pytest_addoption
+    """
+    group = parser.getgroup("jubilant-bdd")
+    group.addoption(
+        NO_TEARDOWN_FLAG_NAME,
+        action="store_true",
+        default=False,
+        help="Skip teardown of model(s) after BDD tests complete.",
+    )
+    group.addoption(
+        WAIT_TIMEOUT_FLAG_NAME,
+        action="store",
+        type=float,
+        default=DEFAULT_WAIT_TIMEOUT,
+        help="Set the wait timeout (in seconds) for the BDD testing context.",
+    )
+
 
 # ---
 # `pytest` fixtures.
