@@ -19,6 +19,7 @@ import time
 from collections import deque
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
+from typing import Any
 
 from jubilant import Juju, Task
 from jubilant.statustypes import AppStatus, UnitStatus
@@ -103,6 +104,25 @@ class ModelMapping(Mapping[str, Juju]):
         juju.add_model(name)
 
         self._data[name] = juju
+
+    def destroy(self, *models: str, **kwargs: Any) -> None:
+        """Destroy model(s) in the testing context.
+
+        Args:
+            models:
+                Names of model(s) to destroy. If no model names are provided,
+                then all models will be destroyed.
+            kwargs: Keyword arguments to pass to the :meth:`Juju.destory_model` method.
+
+        Keyword Args:
+            destroy_storage: If ``True``, destroy all storage instances in the model(s).
+            force: If ``True``, force model destruction and ignore errors.
+        """
+        if len(models) == 0:
+            models = self.keys()
+
+        for model in models:
+            self[model].destroy_model(model, **kwargs)
 
     def __getitem__(self, model: str, /) -> Juju:  # noqa D105
         try:
