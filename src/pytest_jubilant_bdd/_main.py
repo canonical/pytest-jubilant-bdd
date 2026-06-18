@@ -81,7 +81,7 @@ def context(request: pytest.FixtureRequest) -> Iterator[Context]:
     yield context
 
     if not request.config.getoption(NO_TEARDOWN_FLAG_NAME):
-        context.models.destroy(destory_storage=True, force=True)
+        context.models.destroy(destroy_storage=True, force=True)
 
 
 # ---
