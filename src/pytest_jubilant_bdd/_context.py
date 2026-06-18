@@ -174,42 +174,12 @@ class Context:
 
         return Juju()
 
-    def get_apps(self, model_names: Iterable[str] | None = None) -> dict[str, AppStatus]:
-        """Get applications.
-
-        Args:
-            model_names:
-                Get all applications that belong to the provided model names.
-                If no model names are provided, then all applications are returning.
-
-        Raises:
-            TooManyDeployedApplications:
-                Raised if multiple applications share the same name in the returned
-                ``model_names`` search.
-        """
-        models = [self.models[m] for m in model_names] if model_names else self.models.values()
-
-        result: dict[str, AppStatus] = {}
-        for model in models:
-            apps = model.status().apps
-            if intersection := set(result) & set(apps):
-                raise TooManyDeployedAppsError(
-                    f"App name(s) '{intersection}' {'is' if len(intersection) == 1 else 'are'} "
-                    f"used multiple times in the current testing context. Either narrow your "
-                    f"application name search or ensure that you use a unique name for each "
-                    f"deployed application."
-                ) from None
-
-            result.update(apps)
-
-        return result
-
-    def get_app(self, app_name: str, /, *, model_name: str | None = None) -> AppStatus:
+    def get_app(self, app: str, /, *, model: str | None = None) -> AppStatus:
         """Get an application.
 
         Args:
-            app_name: Name of the application.
-            model_name: Name of the model the application is deployed to.
+            app: Name of the application to retrieve.
+            model: Name of the model to search for the application in.
 
         Raises:
             AppNotFoundError:
@@ -218,56 +188,71 @@ class Context:
                 Raised if multiple applications share the same name in the current
                 testing context and no ``model_name`` was provided.
         """
-        args = []
-        if model_name:
-            args.append(model_name)
+        return self.get_apps(app, model=model)[app]
 
-        apps = self.get_apps(*args)
-        try:
-            return apps[app_name]
-        except KeyError:
+    def get_apps(self, *apps: str, model: str | None = None) -> dict[str, AppStatus]:
+        """Get applications.
+
+        Args:
+            apps:
+                Names of the applications to retrieve. If no application names are provided,
+                then all applications in the current testing context will be retrieved.
+            model: Name of the model to search for the applications in.
+
+        Raises:
+            AppNotFoundError:
+                Raised if the requested applications are not found in any model.
+            TooManyDeployedApplications:
+                Raised if multiple applications share the same name in the returned search.
+        """
+        current_models = self.get_models(model) if model else self.models
+        current_apps: dict[str, AppStatus] = {}
+
+        for model_ in current_models.values():
+            apps_ = model_.status().apps
+            if collision := apps_.keys() & current_apps:
+                raise TooManyDeployedAppsError(
+                    f"App name(s) '{collision}' {'is' if len(collision) == 1 else 'are'} "
+                    f"used multiple times in the current testing context. Either narrow your "
+                    f"application name search or ensure that you use a unique name for each "
+                    f"deployed application."
+                ) from None
+
+            current_apps.update(apps_)
+
+        if not apps:
+            return current_apps
+
+        if missing := set(apps) - current_apps.keys():
             raise AppNotFoundError(
-                f"App not found: '{app_name}' is not deployed"
-                f"{f' in model \'{model_name}\'' if model_name else ''}."
-                f"Available apps: {', '.join(f'{app_}' for app_ in apps)}"
+                f"App(s) not found: '{missing}' {'is' if len(missing) == 1 else 'are'} "
+                f"not deployed{f" in model '{model}'" if model else ''}."
             ) from None
 
-    def get_models(self, model_names: Iterable[str] | None = None) -> dict[str, Juju]:
+        return {app: current_apps[app] for app in apps}
+
+    def get_models(self, *models: str) -> dict[str, Juju]:
         """Get models.
 
         Args:
-            model_names: Models to retrieve.
+            models:
+                Names of the models to retrieve. If no model names are provided,
+                then all models in the current testing context will be retrieved.
 
         Raises:
             ModelNotFoundError: Raised if a provided model name does not exist.
         """
-        if model_names:
-            return {model: self.models[model] for model in model_names}
+        if models:
+            return {model: self.models[model] for model in models}
         else:
             return dict(self.models)
 
-    def get_units(self, model_names: Iterable[str] | None = None) -> dict[str, UnitStatus]:
-        """Get units.
-
-        Args:
-            model_names:
-                Get all units that belong to the provided model names.
-                If no model names are provided, then all applications are returning.
-
-        Raises:
-            TooManyDeployedApplications:
-                Raised if multiple applications share the same name in the returned
-                ``model_names`` search.
-        """
-        apps = self.get_apps(model_names)
-        return {name: unit for app in apps.values() for name, unit in app.units.items()}
-
-    def get_unit(self, unit_name: str, /, *, model_name: str | None = None) -> UnitStatus:
+    def get_unit(self, unit: str, /, *, model: str | None = None) -> UnitStatus:
         """Get a unit.
 
         Args:
-            unit_name: Name of the unit.
-            model_name: Name of the model the unit is deployed in.
+            unit: Name of the unit to retrieve.
+            model: Name of the model to search for the unit in.
 
         Raises:
             TooManyDeployedAppsError:
@@ -276,19 +261,41 @@ class Context:
             UnitNotFoundError:
                 Raised if the requested unit is not found under its application namespace.
         """
-        args = []
-        if model_name:
-            args.append(model_name)
+        return self.get_units(unit, model=model)[unit]
 
-        units = self.get_units(*args)
-        try:
-            return units[unit_name]
-        except KeyError:
+    def get_units(self, *units: str, model: str | None = None) -> dict[str, UnitStatus]:
+        """Get units.
+
+        Args:
+            units: Names of the units to retrieve. If no unit names are provided,
+                then all units in the current testing context will be retrieved.
+            model: Name of the model to search for the applications in.
+
+        Raises:
+            AppNotFoundError:
+                Raised if the requested units are not found in any application or model.
+            TooManyDeployedApplications:
+                Raised if multiple applications share the same name in the returned search.
+        """
+        apps = [unit.split("/", maxsplit=1)[0] for unit in units]
+        current_apps = self.get_apps(*apps, model=model)
+        current_units = {
+            name: unit
+            for app in current_apps.values()
+            for name, unit in app.units.items()
+        }
+
+        if not units:
+            return current_units
+
+        if missing := set(units) - current_units.keys():
             raise UnitNotFoundError(
-                f"Unit not found: '{unit_name}' is not deployed"
-                f"{f' in model \'{model_name}\'' if model_name else ''}. "
-                f"Available units: {', '.join(f'{unit_}' for unit_ in units)}"
+                f"Unit(s) not found: '{missing}' {'is' if len(missing) == 1 else 'are'} "
+                f"not deployed{f" in model '{model}'" if model else ''}. "
+                f"Available units: {', '.join(f'{unit}' for unit in current_units)}"
             ) from None
+
+        return {unit: current_units[unit] for unit in units}
 
     def wait(
         self,
