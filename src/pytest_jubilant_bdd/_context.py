@@ -118,10 +118,7 @@ class ModelMapping(Mapping[str, Juju]):
             destroy_storage: If ``True``, destroy all storage instances in the model(s).
             force: If ``True``, force model destruction and ignore errors.
         """
-        if len(models) == 0:
-            models = self.keys()
-
-        for model in models:
+        for model in models or self.keys():
             self[model].destroy_model(model, **kwargs)
 
     def __getitem__(self, model: str, /) -> Juju:  # noqa D105
