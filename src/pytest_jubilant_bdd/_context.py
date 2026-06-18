@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Track and control testing contexts."""
+"""Track and control behavior-driven development (BDD) testing contexts."""
 
 import secrets
 import time
