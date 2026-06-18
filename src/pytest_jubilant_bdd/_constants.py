@@ -25,4 +25,6 @@ type AgentStatus = Literal["idle"]
 type WorkloadStatus = Literal["active", "blocked", "error", "maintenance", "waiting"]
 
 AGENT_STATUSES = list(get_args(AgentStatus.__value__))
+AGENT_STATUS_CAPTURE_GROUP = rf"(?P<status>{'|'.join(AGENT_STATUSES)})"
 WORKLOAD_STATUSES = list(get_args(WorkloadStatus.__value__))
+WORKLOAD_STATUS_CAPTURE_GROUP = rf"(?P<status>{'|'.join(WORKLOAD_STATUSES)})"

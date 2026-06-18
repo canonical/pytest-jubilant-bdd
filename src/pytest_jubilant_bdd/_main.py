@@ -26,8 +26,9 @@ import pytest
 from pytest_bdd import given, parsers, then, when
 
 from ._constants import (
+    AGENT_STATUS_CAPTURE_GROUP,
     DEFAULT_WAIT_TIMEOUT,
-    WORKLOAD_STATUSES,
+    WORKLOAD_STATUS_CAPTURE_GROUP,
     NO_TEARDOWN_FLAG_NAME,
     WAIT_TIMEOUT_FLAG_NAME,
 )
@@ -260,8 +261,8 @@ def run_exec(
 
 @then(
     parsers.re(
-        r"the workload status for (?P<type_>app|unit) '(?P<target>[^']+)' is '(?P<status>%s)'"
-        % "|".join(WORKLOAD_STATUSES)
+        r"the workload status for (?P<type_>app|unit) '(?P<target>[^']+)' "
+        rf"is '{WORKLOAD_STATUS_CAPTURE_GROUP}'"
     )
 )
 def assert_workload_status(
