@@ -82,15 +82,15 @@ class ModelMapping(Mapping[str, Juju]):
     """Track models in a testing context.
 
     Args:
-        postfix:
-            Common slug shared by all models in a testing context.
+        suffix:
+            Common suffix shared by all models in a testing context.
             This value is used to ensure that there are no conflicts between models in the
             testing context and models that already exist in the current cloud/controller.
     """
 
-    def __init__(self, *, postfix: str | None = None):
+    def __init__(self, *, suffix: str | None = None):
         self._data: dict[str, Juju] = {}
-        self._postfix = postfix if postfix else secrets.token_hex(4)
+        self._suffix = suffix if suffix else secrets.token_hex(4)
 
     def add(self, model: str) -> None:
         """Add a new model to testing context.
@@ -99,7 +99,7 @@ class ModelMapping(Mapping[str, Juju]):
             model: Name of the new model.
         """
         juju = Juju()
-        name = f"{model}-{self._postfix}"
+        name = f"{model}-{self._suffix}"
 
         juju.add_model(name)
 
@@ -123,7 +123,7 @@ class ModelMapping(Mapping[str, Juju]):
 
     def __getitem__(self, model: str, /) -> Juju:  # noqa D105
         try:
-            return self._data[f"{model}-{self._postfix}"]
+            return self._data[f"{model}-{self._suffix}"]
         except KeyError:
             raise ModelNotFoundError(
                 f"Model '{model}' not found. "
