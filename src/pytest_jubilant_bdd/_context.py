@@ -338,7 +338,7 @@ class Context:
         start_time = time.monotonic()
         while time.monotonic() - start_time < timeout:
             if error is not None and error(self):
-                name = getattr(error, '__qualname__', repr(error))
+                name = getattr(error, "__qualname__", repr(error))
                 raise WaitError(f"Wait error function '{name}' returned `True`")
 
             if ready(self):
