@@ -25,6 +25,7 @@ from typing import Any
 import pytest
 from pytest_bdd import given, parsers, then, when
 
+from ._assertions import assertions
 from ._constants import (
     AGENT_STATUS_CAPTURE_GROUP,
     DEFAULT_WAIT_TIMEOUT,
@@ -86,6 +87,7 @@ def context(request: pytest.FixtureRequest) -> Iterator[Context]:
 # ---
 # Gherkin step handlers.
 # ---
+
 
 # Given steps - Setup and context building
 
@@ -260,6 +262,28 @@ def run_exec(
 
 
 @then(
+    flexible(
+        rf"all agents are %'{AGENT_STATUS_CAPTURE_GROUP}'% "
+        r"[in %models? (?P<models>(?:'([^']+)'(?:, (?:and )?|and )?)+)%]"
+    ),
+    converters={"models": make_list},
+)
+def assert_all_agent_status(
+    context: Context, status: str, models: list[str] | None
+) -> None:
+    """Assert the status for all agents.
+
+    If no model names are provided, then the status of all agents in the current testing context
+    will be validated.
+    """
+    context.wait(
+        ready=lambda ctx: assertions.model.all_agent_statuses_are(
+            ctx, *(models or []), expected=status
+        )
+    )
+
+
+@then(
     parsers.re(
         r"the workload status for (?P<type_>app|unit) '(?P<target>[^']+)' "
         rf"is '{WORKLOAD_STATUS_CAPTURE_GROUP}'"
@@ -269,27 +293,41 @@ def assert_workload_status(
     context: Context, type_: str, target: str, status: str
 ) -> None:
     """Assert the workload status of an application or unit."""
-    if type_ == "app":
-        assert context.get_app(target).app_status.current == status
-    else:  # target is a unit.
-        assert context.get_unit(target).workload_status.current == status
+    match type_:
+        case "app":
+            context.wait(
+                ready=lambda ctx: assertions.app.all_unit_statuses_are(
+                    ctx, target, expected=status
+                )
+            )
+        case "unit":
+            context.wait(
+                ready=lambda ctx: assertions.unit.all_statuses_are(
+                    ctx, target, expected=status
+                )
+            )
 
 
 @then(
     parsers.re(
-        r"the workload status message for (?P<type_>app|unit) '(?P<target>[^']+)' is '(?P<message>[^']*)'"
+        r"the workload status message for (?P<type_>app|unit) '(?P<target>[^']+)' "
+        r"is '(?P<message>[^']*)'"
     )
 )
 def assert_workload_status_message(
     context: Context, type_: str, target: str, message: str
 ) -> None:
     """Assert the workload status of an application or unit."""
-    if type_ == "app":
-        assert context.get_app(target).app_status.message == message
-    else:  # target is a unit.
-        assert context.get_unit(target).workload_status.message == message
-
-
-# ---
-# `pytest` configuration.
-# ---
+    match type_:
+        case "app":
+            context.wait(
+                ready=lambda ctx: assertions.app.all_unit_status_messages_are(
+                    ctx, target, expected=message
+                )
+            )
+        case "unit":
+            context.wait(
+                ready=lambda ctx: assertions.unit.all_status_messages_are(
+                    ctx, target, expected=message
+                )
+            )
