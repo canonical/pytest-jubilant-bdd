@@ -212,12 +212,78 @@ class ModelAssertions:
         return True
 
 
+class UnitAssertions:
+    """Reusable unit-level assertions."""
+
+    @staticmethod
+    def all_agent_statuses_are(
+        context: "Context", *units: str, expected: AgentStatus
+    ) -> bool:
+        """Validate the status of all agents in a set of units.
+
+        Args:
+            context: Reference to the current testing :class:`Context` object.
+            units: Units to assess the agent status of.
+            expected: The expected agent status.
+
+        Returns:
+            ``True`` if all the agent's statuses in ``units`` are equal to ``expected``,
+            otherwise, returns ``False``.
+        """
+        for unit in context.get_units(*units).values():
+            if unit.juju_status.current != expected:
+                return False
+
+        return True
+
+    @staticmethod
+    def all_statuses_are(
+        context: "Context", *units: str, expected: WorkloadStatus
+    ) -> bool:
+        """Validate the workload status of all units in a set of units.
+
+        Args:
+            context: Reference to the current testing :class:`Context` object.
+            units: Units to assess the workload status of.
+            expected: The expected workload status.
+
+        Returns:
+            ``True`` if all the workload statuses in ``units`` are equal to ``expected``,
+            otherwise, returns ``False``.
+        """
+        for unit in context.get_units(*units).values():
+            if unit.workload_status.current != expected:
+                return False
+
+        return True
+
+    @staticmethod
+    def all_status_messages_are(context: "Context", *units: str, expected: str) -> bool:
+        """Validate the workload status message of all units in a set of units.
+
+        Args:
+            context: Reference to the current testing :class:`Context` object.
+            units: Units to assess the workload status message of.
+            expected: The expected workload status message.
+
+        Returns:
+            ``True`` if all the workload status messages in ``units`` are equal to
+            ``expected``, otherwise, returns ``False``.
+        """
+        for unit in context.get_units(*units).values():
+            if unit.workload_status.message != expected:
+                return False
+
+        return True
+
+
 @dataclass(frozen=True)
 class Assertions:
     """Reusable assertions for validating the behavior of charms."""
 
     app: AppAssertions = AppAssertions()
     model: ModelAssertions = ModelAssertions()
+    unit: UnitAssertions = UnitAssertions()
 
 
 assertions = Assertions()
