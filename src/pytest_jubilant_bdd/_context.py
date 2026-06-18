@@ -123,7 +123,13 @@ class ModelMapping(Mapping[str, Juju]):
 
     def __getitem__(self, model: str, /) -> Juju:  # noqa D105
         try:
-            return self._data[f"{model}-{self._suffix}"]
+            # Append `_suffix` to `model` if it's not provided. If the common suffix is already
+            # present in `model`, do not append `_suffix` to prevent an inaccurate model lookup.
+            return self._data[
+                f"{model}-{self._suffix}"
+                if not model.endswith(f"-{self._suffix}")
+                else model
+            ]
         except KeyError:
             raise ModelNotFoundError(
                 f"Model '{model}' not found. "
