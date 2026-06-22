@@ -34,8 +34,8 @@ from ._constants import (
     WAIT_TIMEOUT_FLAG_NAME,
 )
 from ._context import Context
-from ._errors import AppNotFoundError, CharmNotFoundError, TooManyDeployedAppsError
 from ._parsers import flexible, make_list, make_dict
+from .errors import AppNotFoundError, CharmNotFoundError, TooManyDeployedAppsError
 
 # ---
 # `pytest` hooks.

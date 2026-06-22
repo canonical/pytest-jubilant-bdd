@@ -25,7 +25,7 @@ from jubilant import Juju, Task
 from jubilant.statustypes import AppStatus, UnitStatus
 
 from ._constants import DEFAULT_WAIT_TIMEOUT
-from ._errors import (
+from .errors import (
     AppNotFoundError,
     ModelNotFoundError,
     TooManyDeployedAppsError,
