@@ -225,7 +225,7 @@ def run_action(
     context: Context,
     action: str,
     units: list[str],
-    params: Mapping[str, Any] | None,
+    params: Mapping[str, Any],
     model: str | None,
 ) -> None:
     """Run an action on one or more units."""
@@ -268,18 +268,14 @@ def run_exec(
     ),
     converters={"models": make_list},
 )
-def assert_all_agent_status(
-    context: Context, status: str, models: list[str] | None
-) -> None:
+def assert_all_agent_status(context: Context, status: str, models: list[str]) -> None:
     """Assert the status for all agents.
 
     If no model names are provided, then the status of all agents in the current testing context
     will be validated.
     """
     context.wait(
-        ready=lambda ctx: assertions.model.all_agent_statuses_are(
-            ctx, *(models or []), expected=status
-        )
+        ready=lambda ctx: assertions.model.all_agent_statuses_are(ctx, *models, expected=status)
     )
 
 
