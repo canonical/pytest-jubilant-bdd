@@ -24,7 +24,7 @@ from pytest_bdd.parsers import StepParser
 
 
 _FIND_OPTIONAL_REGEX = re.compile(r"%.*?%|\[((?:[^]%]|%.*?%)+?)]")
-"""Regular expression that matches any clause encapsulated in square brackets (``[`` and ``]``).
+r"""Regular expression that matches any clause encapsulated in square brackets (``[`` and ``]``).
 
 Does not match any bracket characters wrapped surrounded with percent signs (``%``).
 
