@@ -121,6 +121,18 @@ class ModelMapping(Mapping[str, Juju]):
         for model in models or self.keys():
             self[model].destroy_model(model, **kwargs)
 
+    def __contains__(self, key: object) -> bool:  # noqa D105
+        # Arguments are not covariant in Python (you can't narrow their type).
+        # We know that `ModelMapping` keys are only ever strings, so return `False`
+        # if `key` is not a `str`. The annotation for `key` must be `object` or the
+        # type checker will raise "incompatible method override" errors.
+        if not isinstance(key, str):
+            return False
+
+        return (
+            f"{key}-{self._suffix}" if not key.endswith(f"-{self._suffix}") else key
+        ) in self._data
+
     def __getitem__(self, model: str, /) -> Juju:  # noqa D105
         try:
             # Append `_suffix` to `model` if it's not provided. If the common suffix is already
