@@ -5,10 +5,11 @@ build/
 dist/
 wheels/
 *.egg-info
+.coverage
+cover/
 
 # Virtual environments
 .venv
 
 # IDE-specific files
-
 .idea

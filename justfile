@@ -58,7 +58,9 @@ test-all: unit integration
 
 # Run unit tests
 unit *args:
-    {{uv_run}} pytest tests/unit {{args}}
+    {{uv_run}} coverage run -m pytest --tb native -v -s {{args}} tests/unit
+    {{uv_run}} coverage report
+    {{uv_run}} coverage xml -o {{justfile_directory() / "cover" / "coverage.xml"}}
 
 # Run integration tests
 integration *args:

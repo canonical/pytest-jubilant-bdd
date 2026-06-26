@@ -36,5 +36,14 @@ dev = [
     "pyright",
 ]
 
+[tool.coverage.run]
+branch = true
+include = [
+    "src/**/*.py"
+]
+
+[tool.coverage.report]
+show_missing = true
+
 [project.entry-points.pytest11]
 pytest-jubilant-bdd = "pytest_jubilant_bdd._main"
