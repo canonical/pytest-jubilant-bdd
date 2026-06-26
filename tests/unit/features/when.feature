@@ -2,6 +2,9 @@ Feature: Reusable `when` steps
   Background:
     Given I add model 'test'
 
+  Scenario: Run action on one unit without parameters
+    When I run action 'get-password' on unit 'slurmctld/0'
+
   Scenario: Run action on one unit
     When I run action 'get-password' on unit 'slurmctld/0' with parameters 'foo=bar'
 
