@@ -88,7 +88,7 @@ class ModelMapping(Mapping[str, Juju]):
             testing context and models that already exist in the current cloud/controller.
     """
 
-    def __init__(self, *, suffix: str | None = None):
+    def __init__(self, *, suffix: str | None = None) -> None:
         self._data: dict[str, Juju] = {}
         self._suffix = suffix if suffix else secrets.token_hex(4)
 
