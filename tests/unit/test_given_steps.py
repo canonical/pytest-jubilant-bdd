@@ -168,6 +168,8 @@ class TestDeploy:
             "ubuntu@24.04",
             "--channel",
             "latest/edge",
+            "--num-units",
+            "3",
         ]
         assert f"test-{MODEL_SUFFIX}" in context.models
 
@@ -222,6 +224,8 @@ class TestDeployLocal:
             "slurmctld",
             "--base",
             "ubuntu@24.04",
+            "--num-units",
+            "3",
         ]
 
     def test_raises_when_env_var_missing(
@@ -240,7 +244,7 @@ class TestDeployLocal:
                 f"is not set."
             ),
         ):
-            deploy_local(context, "slurmctld", None, None, None)
+            deploy_local(context, "slurmctld", None, None, None, 1)
 
     def test_raises_when_path_missing(self, context: Context) -> None:
         """``deploy_local`` raises when the supplied path is not a file."""
@@ -250,7 +254,7 @@ class TestDeployLocal:
             CharmNotFoundError,
             match=f"Charm not found: '{nonexistent}' is not a file",
         ):
-            deploy_local(context, "slurmctld", nonexistent, None, None)
+            deploy_local(context, "slurmctld", nonexistent, None, None, 1)
 
 
 class TestIntegrate:

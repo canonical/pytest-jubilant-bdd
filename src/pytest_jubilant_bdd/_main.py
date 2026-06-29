@@ -114,8 +114,10 @@ def add_unit(context: Context, num_units: int, app: str, model: str | None) -> N
         "I deploy '{app}' "
         "[in model '{model}'] "
         "[from channel '{channel}'] "
-        "[on base '{base}']"
-    )
+        "[on base '{base}'] "
+        "[with '{num_units}' %units?%]"
+    ),
+    converters={"num_units": lambda v: int(v) if v is not None else 1},
 )
 def deploy(
     context: Context,
@@ -123,9 +125,10 @@ def deploy(
     model: str | None,
     channel: str | None,
     base: str | None,
+    num_units: int,
 ) -> None:
     """Deploy an application from Charmhub."""
-    _deploy(context, app, model=model, channel=channel, base=base)
+    _deploy(context, app, model=model, channel=channel, base=base, num_units=num_units)
 
 
 @given(
@@ -133,12 +136,21 @@ def deploy(
         "I deploy '{app}' from a local charm "
         "[located at '{path}'] "
         "[in model '{model}'] "
-        "[on base '{base}']"
+        "[on base '{base}'] "
+        "[with '{num_units}' %units?%]"
     ),
-    converters={"path": lambda v: Path(v) if v is not None else v},
+    converters={
+        "path": lambda v: Path(v) if v is not None else v,
+        "num_units": lambda v: int(v) if v is not None else 1,
+    },
 )
 def deploy_local(
-    context: Context, app: str, path: Path | None, model: str | None, base: str | None
+    context: Context,
+    app: str,
+    path: Path | None,
+    model: str | None,
+    base: str | None,
+    num_units: int,
 ) -> None:
     """Deploy an application from a local ``*.charm`` file."""
     if path is None:
@@ -158,7 +170,7 @@ def deploy_local(
     if not path.is_file():
         raise CharmNotFoundError(f"Charm not found: '{path}' is not a file") from None
 
-    _deploy(context, path.resolve(), app, model=model, base=base)
+    _deploy(context, path.resolve(), app, model=model, base=base, num_units=num_units)
 
 
 def _deploy(
@@ -170,11 +182,12 @@ def _deploy(
     model: str | None = None,
     channel: str | None = None,
     base: str | None = None,
+    num_units: int = 1,
 ) -> None:
     """Base function to deploy a charm."""
     juju = context.get_juju(model)
 
-    juju.deploy(charm, app, base=base, channel=channel)
+    juju.deploy(charm, app, base=base, channel=channel, num_units=num_units)
 
 
 @given(parsers.parse("I integrate '{app_one}' with '{app_two}'"))
