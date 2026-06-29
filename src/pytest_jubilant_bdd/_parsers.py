@@ -151,6 +151,10 @@ class flexible(StepParser):  # noqa N802
         required_text = _STRIP_OPTIONAL_REGEX.sub(
             lambda match: "" if match.group(1) else match.group(0), pattern
         )
+        # Strip trailing whitespace after `%` blocks so the required regex
+        # doesn't require a trailing space when the step is used without
+        # optional clauses.
+        required_text = re.sub(r"%\s+$", "%", required_text)
         required_regex = re.compile(self._build_regex(required_text))
 
         return required_regex, optional_regexes

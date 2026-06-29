@@ -226,7 +226,7 @@ def is_deployed(context: Context, app: str, model: str | None) -> None:
 
 @when(
     flexible(
-        r"I run action '{action}' on %units? (?P<units>(?:'([^']+)'(?:, (?:and )?|and )?)+)% "
+        r"I run action '{action}' on %units? (?P<units>(?:'([^']+)'(?:, (?:and )?|and )?)+)%"
         "[with parameters '{params}'] "
         "[in model '{model}'] "
     ),
@@ -252,7 +252,7 @@ def run_action(
 
 @when(
     flexible(
-        "I execute '{command}' on %(?P<type_>machines?|units?) (?P<targets>(?:'([^']+)'(?:, (?:and )?|and )?)+)% "
+        "I execute '{command}' on %(?P<type_>machines?|units?) (?P<targets>(?:'([^']+)'(?:, (?:and )?|and )?)+)%"
         "[in model '{model}']"
     ),
     converters={"targets": make_list},
