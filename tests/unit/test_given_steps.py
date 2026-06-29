@@ -28,6 +28,7 @@ from pytest_jubilant_bdd import Context
 
 # ruff: disable[SLF001]
 from pytest_jubilant_bdd._main import (
+    add_unit,
     deploy_local,
     is_deployed,
     is_integrated,
@@ -86,6 +87,53 @@ class TestAddModel:
             model,
         ]
         assert model in context.models
+
+
+class TestAddUnit:
+    """Test the ``add_unit`` *Given* step handler.
+
+    Notes:
+        Error paths are tested by calling the handler directly rather
+        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
+        before the test body, so exceptions raised during step execution
+        cannot be caught with ``pytest.raises``.
+    """
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Add unit")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``add_unit`` with only the required clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "add-unit",
+            "slurmctld",
+            "--num-units",
+            "3",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Add unit in model")
+    def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
+        """Test ``add_unit`` with the ``in model`` optional clause.
+
+        Notes:
+            The ``flexible`` parser allows optional clauses to appear in any
+            order, so a single test exercising the optional is sufficient.
+        """
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "add-unit",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "slurmctld",
+            "--num-units",
+            "2",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``add_unit`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            add_unit(context, 3, "slurmctld", "nonexistent")
 
 
 class TestDeploy:

@@ -35,3 +35,10 @@ Feature: Reusable `given` steps
   Scenario: Is deployed in model
     Given I add model 'test'
     Given 'slurmctld' is deployed in model 'test'
+
+  Scenario: Add unit
+    Given I add '3' units to app 'slurmctld'
+
+  Scenario: Add unit in model
+    Given I add model 'test'
+    Given I add '2' units to app 'slurmctld' in model 'test'

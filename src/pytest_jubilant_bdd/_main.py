@@ -99,6 +99,17 @@ def add_model(context: Context, model: str) -> None:
 
 
 @given(
+    flexible("I add '{num_units}' %units?% to app '{app}' [in model '{model}']"),
+    converters={"num_units": int},
+)
+def add_unit(context: Context, num_units: int, app: str, model: str | None) -> None:
+    """Add units to a deployed application."""
+    juju = context.get_juju(model)
+
+    juju.add_unit(app, num_units=num_units)
+
+
+@given(
     flexible(
         "I deploy '{app}' "
         "[in model '{model}'] "
