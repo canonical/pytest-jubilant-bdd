@@ -17,6 +17,8 @@ pytest-jubilant-bdd package include:
 
 * `add_model`: A `given` step handler for adding a new Juju model to the
   testing context.
+* `add_unit`: A `given` step handler for adding units to a deployed
+  application.
 * `deploy`: A `given` step handler for deploying a charm from Charmhub.
 * `deploy_local`: A `given` step handler for deploying a local `.charm` file
   onto a Juju model.
@@ -27,6 +29,12 @@ pytest-jubilant-bdd package include:
   are currently integrated.
 * `is_deployed`: A `given` step handler for asserting that an application is
   currently deployed on a Juju model.
+* `run_action`: A `when` step handler for running a Juju action on one or
+  more units.
+* `run_exec`: A `when` step handler for executing a command on one or more
+  machines or units.
+* `assert_all_agent_status`: A `then` step handler for asserting the status
+  of all agents in one or more models.
 * `assert_workload_status`: A `then` step handler for asserting the workload
   status of a deployed application.
 * `assert_workload_status_message`: A `then` step handler for asserting the
