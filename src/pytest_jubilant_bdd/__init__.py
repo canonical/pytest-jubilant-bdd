@@ -11,3 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+"""``pytest-jubilant-bdd`` - a ``jubilant`` wrapper for writing behavior-driven tests with Gherkin.
+
+The plugin provides reusable Gherkin step handlers, fixtures, markers, and options
+for behavior-driven testing of Juju charmed operators.
+"""
+
+__all__ = ["Context", "assertions", "flexible", "make_dict", "make_list"]
+
+from ._assertions import assertions
+from ._context import Context
+from ._parsers import flexible, make_dict, make_list
