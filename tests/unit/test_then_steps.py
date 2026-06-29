@@ -95,7 +95,9 @@ class TestAssertAllAgentStatus:
 
     @staticmethod
     @scenario(REUSABLE_THEN_STEP_TESTS, "All agents idle in multiple models")
-    def test_with_optionals(mock_subprocess_run: MagicMock, mock_status_json: None) -> None:
+    def test_with_optionals(
+        mock_subprocess_run: MagicMock, mock_status_json: None
+    ) -> None:
         """Test ``assert_all_agent_status`` with the ``in models`` optional clause.
 
         Notes:
@@ -183,7 +185,9 @@ class TestAssertWorkloadStatusMessage:
 
     @staticmethod
     @scenario(REUSABLE_THEN_STEP_TESTS, "Workload status message for app")
-    def test_for_app(mock_subprocess_run: MagicMock, _mock_status_message_ready: None) -> None:
+    def test_for_app(
+        mock_subprocess_run: MagicMock, _mock_status_message_ready: None
+    ) -> None:
         """Test ``assert_workload_status_message`` for an application.
 
         No assertion is needed: the handler raises ``TimeoutError`` if the
