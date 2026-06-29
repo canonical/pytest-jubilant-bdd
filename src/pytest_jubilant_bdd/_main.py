@@ -232,7 +232,10 @@ def run_action(
     juju = context.get_juju(model)
 
     for unit in units:
-        result = juju.run(unit, action, params=params)
+        # `Juju.run` performs a `NoneType` check on `params`, but not a zero-value check.
+        # Set `params` to `None` if the Gherkin step doesn't include action parameters to
+        # avoid the creation of a superfluous temp file.
+        result = juju.run(unit, action, params=params if params else None)
         context.action_results.push(result)
 
 
