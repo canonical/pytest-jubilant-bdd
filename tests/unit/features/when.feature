@@ -2,11 +2,8 @@ Feature: Reusable `when` steps
   Background:
     Given I add model 'test'
 
-  Scenario: Run action on one unit without parameters
-    When I run action 'get-password' on unit 'slurmctld/0'
-
   Scenario: Run action on one unit
-    When I run action 'get-password' on unit 'slurmctld/0' with parameters 'foo=bar'
+    When I run action 'get-password' on unit 'slurmctld/0'
 
   Scenario: Run action on multiple units with params in model
     When I run action 'set-config' on units 'slurmctld/0', 'slurmctld/1', and 'slurmctld/2' with parameters 'debug=true key=val' in model 'test'
