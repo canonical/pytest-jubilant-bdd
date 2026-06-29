@@ -275,7 +275,9 @@ def assert_all_agent_status(context: Context, status: str, models: list[str]) ->
     will be validated.
     """
     context.wait(
-        ready=lambda ctx: assertions.model.all_agent_statuses_are(ctx, *models, expected=status)
+        ready=lambda ctx: assertions.model.all_agent_statuses_are(
+            ctx, *models, expected=status
+        )
     )
 
 
