@@ -36,7 +36,7 @@ from pytest_jubilant_bdd._main import (
 )
 
 # ruff: enable[SLF001]
-from pytest_jubilant_bdd.errors import CharmNotFoundError
+from pytest_jubilant_bdd.errors import CharmNotFoundError, ModelNotFoundError
 
 
 @pytest.fixture(scope="function")
