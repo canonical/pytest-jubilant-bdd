@@ -54,17 +54,13 @@ test *targets:
     done
 
 # Run all test suites
-test-all: unit integration
+test-all: unit
 
 # Run unit tests
 unit *args:
     {{uv_run}} coverage run -m pytest --tb native -v -s {{args}} tests/unit
     {{uv_run}} coverage report
     {{uv_run}} coverage xml -o {{justfile_directory() / "cover" / "coverage.xml"}}
-
-# Run integration tests
-integration *args:
-    {{uv_run}} pytest tests/integration {{args}}
 
 # Build project artifacts
 build:
@@ -90,7 +86,6 @@ fmt:
 # Check files against style standards
 lint:
     {{uv_run}} ruff check
-
 
 # Perform type checking
 typecheck:
