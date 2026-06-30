@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""`pytest-jubilant-bdd` plugin module."""
+"""``pytest-jubilant-bdd`` plugin module."""
 
 __all__ = ["Context"]
 
