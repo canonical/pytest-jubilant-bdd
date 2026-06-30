@@ -236,6 +236,22 @@ def is_deployed(context: Context, app: str, model: str | None) -> None:
         )
 
 
+@given(
+    flexible("I set '{option}' for app '{app}' to '{value}' [in model '{model}']"),
+)
+def set_app_config(
+    context: Context,
+    option: str,
+    app: str,
+    value: str,
+    model: str | None,
+) -> None:
+    """Set a configuration option for a deployed application."""
+    juju = context.get_juju(model)
+
+    juju.config(app, values={option: value})
+
+
 # When steps - Actions
 
 

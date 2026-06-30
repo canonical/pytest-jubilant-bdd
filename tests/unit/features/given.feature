@@ -42,3 +42,13 @@ Feature: Reusable `given` steps
   Scenario: Add unit in model
     Given I add model 'test'
     Given I add '2' units to app 'slurmctld' in model 'test'
+
+  Scenario: Set app config
+    Given I add model 'test'
+    Given I deploy 'slurmctld'
+    Given I set 'debug' for app 'slurmctld' to 'true'
+
+  Scenario: Set app config in model
+    Given I add model 'test2'
+    Given I deploy 'slurmctld' in model 'test2'
+    Given I set 'debug' for app 'slurmctld' to 'true' in model 'test2'
