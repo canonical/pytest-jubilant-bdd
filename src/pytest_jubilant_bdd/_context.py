@@ -138,9 +138,7 @@ class ModelMapping(Mapping[str, Juju]):
             # Append `_suffix` to `model` if it's not provided. If the common suffix is already
             # present in `model`, do not append `_suffix` to prevent an inaccurate model lookup.
             return self._data[
-                f"{model}-{self._suffix}"
-                if not model.endswith(f"-{self._suffix}")
-                else model
+                f"{model}-{self._suffix}" if not model.endswith(f"-{self._suffix}") else model
             ]
         except KeyError:
             raise ModelNotFoundError(
@@ -169,8 +167,8 @@ class Context:
     """
 
     wait_timeout: float = DEFAULT_WAIT_TIMEOUT
-    action_results: stack[Task] = field(default_factory=stack, init=False)
-    exec_results: stack[Task] = field(default_factory=stack, init=False)
+    action_results: stack[Task] = field(default_factory=lambda: stack[Task](), init=False)
+    exec_results: stack[Task] = field(default_factory=lambda: stack[Task](), init=False)
     models: ModelMapping = field(default_factory=ModelMapping, init=False)
 
     def get_juju(self, model: str | None = None) -> Juju:
@@ -298,9 +296,7 @@ class Context:
         apps = [unit.split("/", maxsplit=1)[0] for unit in units]
         current_apps = self.get_apps(*apps, model=model)
         current_units = {
-            name: unit
-            for app in current_apps.values()
-            for name, unit in app.units.items()
+            name: unit for app in current_apps.values() for name, unit in app.units.items()
         }
 
         if not units:

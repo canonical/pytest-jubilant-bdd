@@ -20,7 +20,7 @@ __all__ = ["Context"]
 import os
 from collections.abc import Iterator, Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from pytest_bdd import given, parsers, then, when
@@ -29,12 +29,14 @@ from ._assertions import assertions
 from ._constants import (
     AGENT_STATUS_CAPTURE_GROUP,
     DEFAULT_WAIT_TIMEOUT,
-    WORKLOAD_STATUS_CAPTURE_GROUP,
     NO_TEARDOWN_FLAG_NAME,
     WAIT_TIMEOUT_FLAG_NAME,
+    WORKLOAD_STATUS_CAPTURE_GROUP,
+    AgentStatus,
+    WorkloadStatus,
 )
 from ._context import Context
-from ._parsers import flexible, make_list, make_dict
+from ._parsers import flexible, make_dict, make_list
 from .errors import AppNotFoundError, CharmNotFoundError, TooManyDeployedAppsError
 
 # ---
@@ -76,7 +78,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 @pytest.fixture(scope="session")
 def context(request: pytest.FixtureRequest) -> Iterator[Context]:
     """Track the testing context of a ``pytest`` session."""
-    context = Context(wait_timeout=request.config.getoption(WAIT_TIMEOUT_FLAG_NAME))
+    context = Context(wait_timeout=cast(float, request.config.getoption(WAIT_TIMEOUT_FLAG_NAME)))
 
     yield context
 
@@ -184,7 +186,7 @@ def _deploy(
     base: str | None = None,
     num_units: int = 1,
 ) -> None:
-    """Base function to deploy a charm."""
+    """Deploy an application."""
     juju = context.get_juju(model)
 
     juju.deploy(charm, app, base=base, channel=channel, num_units=num_units)
@@ -281,8 +283,15 @@ def run_exec(
     juju = context.get_juju(model)
 
     for target in targets:
-        result = juju.exec(command, **{type_.rstrip("s"): target})
-        context.exec_results.push(result)
+        match type_.rstrip("s"):
+            case "machine":
+                result = juju.exec(command, machine=target)
+            case "unit":
+                result = juju.exec(command, unit=cast(str, target))
+
+        context.exec_results.push(result)  # type: ignore[reportPossiblyUnboundVariable] # noqa
+        # `result` cannot be unbound because this step handler will always match `type_`
+        # to "machine" or "unit". Otherwise, this handler will not match the Gherkin step.
 
 
 # Then steps - Attestation and verification.
@@ -295,16 +304,14 @@ def run_exec(
     ),
     converters={"models": make_list},
 )
-def assert_all_agent_status(context: Context, status: str, models: list[str]) -> None:
+def assert_all_agent_status(context: Context, status: AgentStatus, models: list[str]) -> None:
     """Assert the status for all agents.
 
     If no model names are provided, then the status of all agents in the current testing context
     will be validated.
     """
     context.wait(
-        ready=lambda ctx: assertions.model.all_agent_statuses_are(
-            ctx, *models, expected=status
-        )
+        ready=lambda ctx: assertions.model.all_agent_statuses_are(ctx, *models, expected=status)
     )
 
 
@@ -315,7 +322,7 @@ def assert_all_agent_status(context: Context, status: str, models: list[str]) ->
     )
 )
 def assert_workload_status(
-    context: Context, type_: str, target: str, status: str
+    context: Context, type_: str, target: str, status: WorkloadStatus
 ) -> None:
     """Assert the workload status of an application or unit."""
     match type_:
@@ -327,9 +334,7 @@ def assert_workload_status(
             )
         case "unit":
             context.wait(
-                ready=lambda ctx: assertions.unit.all_statuses_are(
-                    ctx, target, expected=status
-                )
+                ready=lambda ctx: assertions.unit.all_statuses_are(ctx, target, expected=status)
             )
 
 
