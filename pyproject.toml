@@ -46,5 +46,28 @@ include = [
 [tool.coverage.report]
 show_missing = true
 
+[tool.ruff]
+line-length = 99
+extend-exclude = ["__pycache__", "*.egg_info"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "C", "N", "D", "I001"]
+extend-ignore = [
+    "D203",
+    "D204",
+    "D213",
+    "D215",
+    "D400",
+    "D404",
+    "D406",
+    "D407",
+    "D408",
+    "D409",
+    "D413",
+]
+ignore = ["E501", "D107"]
+per-file-ignores = {"tests/*" = ["D100","D101","D102","D103","D104"]}
+mccabe = { "max-complexity" = 15 }
+
 [project.entry-points.pytest11]
 pytest-jubilant-bdd = "pytest_jubilant_bdd._main"
