@@ -206,9 +206,7 @@ class TestDeployLocal:
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Deploy local with all optionals")
-    def test_with_optionals(
-        mock_subprocess_run: MagicMock, fake_charm_file: str
-    ) -> None:
+    def test_with_optionals(mock_subprocess_run: MagicMock, fake_charm_file: str) -> None:
         """Test ``deploy_local`` with all optional clauses.
 
         Notes:
@@ -239,10 +237,7 @@ class TestDeployLocal:
 
         with pytest.raises(
             CharmNotFoundError,
-            match=(
-                f"Charm not found: environment variable '{slurmctld_charm_path}' "
-                f"is not set."
-            ),
+            match=(f"Charm not found: environment variable '{slurmctld_charm_path}' is not set."),
         ):
             deploy_local(context, "slurmctld", None, None, None, 1)
 
@@ -284,9 +279,7 @@ class TestModelExists:
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Model exists")
-    def test_when_model_exists(
-        context: Context, mock_subprocess_run: MagicMock
-    ) -> None:
+    def test_when_model_exists(context: Context, mock_subprocess_run: MagicMock) -> None:
         """Test ``model_exists`` when the model is present in the context."""
         assert f"test-{MODEL_SUFFIX}" in context.models
 
@@ -325,9 +318,7 @@ class TestIsIntegrated:
     ) -> None:
         """Test ``is_integrated`` raises an ``AssertionError`` when the integration is absent."""
         mock_subprocess_run.return_value = MagicMock(
-            stdout=make_status_json(
-                {"slurmctld": make_app_without_relation("slurmctld")}
-            ),
+            stdout=make_status_json({"slurmctld": make_app_without_relation("slurmctld")}),
             stderr="",
         )
 

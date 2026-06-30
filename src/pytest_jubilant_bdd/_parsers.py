@@ -22,20 +22,19 @@ from typing import Any
 
 from pytest_bdd.parsers import StepParser
 
-
 _FIND_OPTIONAL_REGEX = re.compile(r"%.*?%|\[((?:[^]%]|%.*?%)+?)]")
 r"""Regular expression that matches any clause encapsulated in square brackets (``[`` and ``]``).
 
 Does not match any bracket characters wrapped surrounded with percent signs (``%``).
 
 Notes:
-    This pattern uses a "Match and Skip" strategy to extract text inside square brackets 
-    [like this] while safely ignoring any closing brackets "]" that are trapped inside percent 
+    This pattern uses a "Match and Skip" strategy to extract text inside square brackets
+    [like this] while safely ignoring any closing brackets "]" that are trapped inside percent
     blocks %...%.
-    
+
     Breakdown:
 
-    %.*?%               -> SKIP SIDE: Matches and consumes an entire %block% so the engine 
+    %.*?%               -> SKIP SIDE: Matches and consumes an entire %block% so the engine
                            skips looking for brackets inside it. No capture group here.
     |                   -> OR
     \[                  -> MATCH SIDE: Matches a literal opening square bracket.
@@ -43,7 +42,7 @@ Notes:
       (?:               -> Non-capturing group to evaluate inner contents step-by-step:
         [^\]%]          -> Option A: Match any character that is NOT a closing bracket "]" or "%".
         |               -> OR
-        %.*?%           -> Option B: Consume an entire nested %block% as a single unit, 
+        %.*?%           -> Option B: Consume an entire nested %block% as a single unit,
                            preventing internal patterns from triggering a premature cut-off.
       )+?               -> Repeat these options lazily, matching as little as possible...
     )                   -> END CAPTURE GROUP 1.
@@ -64,14 +63,14 @@ Used to substitute text in Gherkin step with a named capture group.
 _STRIP_OPTIONAL_REGEX = re.compile(r"%.*?%|(\s*\[((?:[^]%]|%.*?%)+?)])")
 """Regular expression that matches optional clauses from a Gherkin step template for extraction.
 
-Functionally similar to ``_FIND_OPTIONAL_REGEX``, but includes 
+Functionally similar to ``_FIND_OPTIONAL_REGEX``, but includes
 square brackets and optional whitespace in capture group 1.
 """
 
 _STRIP_PERCENT_SIGN_REGEX = re.compile(r"%(.*?)%")
 """Regular express that matches the content in between two percent signs.
 
-Used to strip percent signs before assembling the final regex for matching Gherkin steps. 
+Used to strip percent signs before assembling the final regex for matching Gherkin steps.
 """
 
 
@@ -106,15 +105,11 @@ class flexible(StepParser):  # noqa N802
             optional_match = optional_regex.search(tail)
             if optional_match:
                 result.update(
-                    {
-                        k: v
-                        for k, v in optional_match.groupdict().items()
-                        if v is not None
-                    }
+                    {k: v for k, v in optional_match.groupdict().items() if v is not None}
                 )
                 tail = tail[: optional_match.start()] + tail[optional_match.end() :]
             else:  # Set value of fixture(s) to `None` is there is no match.
-                result.update({k: None for k in optional_regex.groupindex})
+                result.update(dict.fromkeys(optional_regex.groupindex))
 
         # Pattern is not a match if there are remaining characters left over.
         if tail.strip():
@@ -139,12 +134,8 @@ class flexible(StepParser):  # noqa N802
         Args:
             pattern: ``pytest-bdd`` step pattern to compile into regular expressions.
         """
-        optional_text = [
-            match for match in _FIND_OPTIONAL_REGEX.findall(pattern) if match
-        ]
-        optional_regexes = [
-            re.compile(self._build_regex(optional)) for optional in optional_text
-        ]
+        optional_text = [match for match in _FIND_OPTIONAL_REGEX.findall(pattern) if match]
+        optional_regexes = [re.compile(self._build_regex(optional)) for optional in optional_text]
 
         # The lambda checks if group 1 matched ([] block), then replace with nothing "".
         # If group 1 didn't match, that means group 0 (% block) matched, so return it untouched.
@@ -165,16 +156,14 @@ class flexible(StepParser):  # noqa N802
         Converts '{name}' placeholders to '(?P<name>[^']+)' regular expression groups.
 
         Args:
-            `text`: Text containing ``pytest-bdd`` placeholders.
+            text: Text containing ``pytest-bdd`` placeholders.
         """
         # Match content between two % signs, and keep only the content (\1)
         return _STRIP_PERCENT_SIGN_REGEX.sub(
             r"\1",
             # Replace braces not encapsulated by two % signs with named capture group.
             _REPLACE_BRACES_REGEX.sub(
-                lambda match: (
-                    f"(?P<{name}>[^']+)" if (name := match.group(1)) else match.group(0)
-                ),
+                lambda match: f"(?P<{name}>[^']+)" if (name := match.group(1)) else match.group(0),
                 text,
             ),
         )

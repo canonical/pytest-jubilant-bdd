@@ -18,11 +18,11 @@
 from unittest.mock import MagicMock
 
 import pytest
-from pytest_bdd import scenario
-from jubilant import Task
-
 from constants import MODEL_SUFFIX, REUSABLE_WHEN_STEP_TESTS
 from helpers import make_task_json
+from jubilant import Task
+from pytest_bdd import scenario
+
 from pytest_jubilant_bdd import Context
 
 
@@ -76,9 +76,7 @@ class TestRunAction:
         assert task.return_code == 0
 
     @staticmethod
-    @scenario(
-        REUSABLE_WHEN_STEP_TESTS, "Run action on multiple units with params in model"
-    )
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Run action on multiple units with params in model")
     def test_with_optionals(context: Context, mock_subprocess_run: MagicMock) -> None:
         """Test ``run_action`` with all optional clauses.
 
@@ -109,9 +107,7 @@ class TestRunExec:
 
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "Exec command on one machine")
-    def test_run_exec_one_machine(
-        context: Context, mock_subprocess_run: MagicMock
-    ) -> None:
+    def test_run_exec_one_machine(context: Context, mock_subprocess_run: MagicMock) -> None:
         """Test ``run_exec`` with only the required clause."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",

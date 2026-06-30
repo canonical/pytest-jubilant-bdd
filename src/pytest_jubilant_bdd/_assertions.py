@@ -29,9 +29,7 @@ class AppAssertions:
     """Reusable application-level assertions."""
 
     @staticmethod
-    def all_agent_statuses_are(
-        context: "Context", *apps: str, expected: AgentStatus
-    ) -> bool:
+    def all_agent_statuses_are(context: "Context", *apps: str, expected: AgentStatus) -> bool:
         """Validate the status of all agents in an application.
 
         Args:
@@ -51,9 +49,7 @@ class AppAssertions:
         return True
 
     @staticmethod
-    def all_unit_statuses_are(
-        context: "Context", *apps: str, expected: WorkloadStatus
-    ) -> bool:
+    def all_unit_statuses_are(context: "Context", *apps: str, expected: WorkloadStatus) -> bool:
         """Validate the status of all units in an application.
 
         Args:
@@ -73,9 +69,7 @@ class AppAssertions:
         return True
 
     @staticmethod
-    def all_unit_status_messages_are(
-        context: "Context", *apps: str, expected: str
-    ) -> bool:
+    def all_unit_status_messages_are(context: "Context", *apps: str, expected: str) -> bool:
         """Validate the status message of all units in an application.
 
         Args:
@@ -99,9 +93,7 @@ class ModelAssertions:
     """Reusable model-level assertions."""
 
     @staticmethod
-    def all_agent_statuses_are(
-        context: "Context", *models: str, expected: AgentStatus
-    ) -> bool:
+    def all_agent_statuses_are(context: "Context", *models: str, expected: AgentStatus) -> bool:
         """Validate the status of all agents in a model.
 
         Args:
@@ -122,9 +114,7 @@ class ModelAssertions:
         return True
 
     @staticmethod
-    def all_app_statuses_are(
-        context: "Context", *models: str, expected: WorkloadStatus
-    ) -> bool:
+    def all_app_statuses_are(context: "Context", *models: str, expected: WorkloadStatus) -> bool:
         """Validate the status of all applications in a model.
 
         Args:
@@ -144,9 +134,7 @@ class ModelAssertions:
         return True
 
     @staticmethod
-    def all_app_status_messages_are(
-        context: "Context", *models: str, expected: str
-    ) -> bool:
+    def all_app_status_messages_are(context: "Context", *models: str, expected: str) -> bool:
         """Validate the status message of all applications in a model.
 
         Args:
@@ -166,9 +154,7 @@ class ModelAssertions:
         return True
 
     @staticmethod
-    def all_unit_statuses_are(
-        context: "Context", *models: str, expected: WorkloadStatus
-    ) -> bool:
+    def all_unit_statuses_are(context: "Context", *models: str, expected: WorkloadStatus) -> bool:
         """Validate the status of all units in a model.
 
         Args:
@@ -189,9 +175,7 @@ class ModelAssertions:
         return True
 
     @staticmethod
-    def all_unit_status_messages_are(
-        context: "Context", *models: str, expected: str
-    ) -> bool:
+    def all_unit_status_messages_are(context: "Context", *models: str, expected: str) -> bool:
         """Validate the status message of all units in a model.
 
         Args:
@@ -216,9 +200,7 @@ class UnitAssertions:
     """Reusable unit-level assertions."""
 
     @staticmethod
-    def all_agent_statuses_are(
-        context: "Context", *units: str, expected: AgentStatus
-    ) -> bool:
+    def all_agent_statuses_are(context: "Context", *units: str, expected: AgentStatus) -> bool:
         """Validate the status of all agents in a set of units.
 
         Args:
@@ -237,9 +219,7 @@ class UnitAssertions:
         return True
 
     @staticmethod
-    def all_statuses_are(
-        context: "Context", *units: str, expected: WorkloadStatus
-    ) -> bool:
+    def all_statuses_are(context: "Context", *units: str, expected: WorkloadStatus) -> bool:
         """Validate the workload status of all units in a set of units.
 
         Args:

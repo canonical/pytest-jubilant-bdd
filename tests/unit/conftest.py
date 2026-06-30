@@ -19,10 +19,9 @@ from collections.abc import Iterator
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pytest_mock import MockerFixture
-
 from constants import MODEL_SUFFIX
 from helpers import make_app_with_relation, make_status_json
+from pytest_mock import MockerFixture
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -55,9 +54,7 @@ def mock_status_json(mock_subprocess_run: MagicMock) -> None:
     ``mock_subprocess_run.return_value.stdout`` after using this fixture.
     """
     mock_subprocess_run.return_value = MagicMock(
-        stdout=make_status_json(
-            {"slurmctld": make_app_with_relation("slurmctld", "slurmd")}
-        ),
+        stdout=make_status_json({"slurmctld": make_app_with_relation("slurmctld", "slurmd")}),
         stderr="",
     )
 
