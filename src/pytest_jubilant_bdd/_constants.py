@@ -21,7 +21,7 @@ WAIT_TIMEOUT_FLAG_NAME = "--juju-bdd-wait-timeout"
 
 DEFAULT_WAIT_TIMEOUT = 3 * 60.0
 
-type AgentStatus = Literal["idle"]
+type AgentStatus = Literal["allocating", "executing", "error", "idle", "lost"]
 type WorkloadStatus = Literal["active", "blocked", "error", "maintenance", "waiting"]
 
 AGENT_STATUSES = list(get_args(AgentStatus.__value__))
