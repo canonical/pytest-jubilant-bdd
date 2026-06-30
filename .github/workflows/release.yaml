@@ -27,8 +27,12 @@ jobs:
 
   tag-and-release:
     needs: ci
+    permissions:
+      contents: write
     uses: canonical/hpc-team/.github/workflows/release-python-package.yaml@main
 
   publish:
     needs: [ci, tag-and-release]
+    permissions:
+      id-token: write
     uses: canonical/hpc-team/.github/workflows/publish-python-package.yaml@main
