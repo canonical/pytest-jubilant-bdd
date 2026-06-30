@@ -15,7 +15,9 @@
 [project]
 name = "pytest-jubilant-bdd"
 version = "0.1.0"
-description = "Add your description here"
+description = """
+A pytest plugin providing reusable Gherkin step handlers
+for behavior-driven testing of Juju charmed operators"""
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
