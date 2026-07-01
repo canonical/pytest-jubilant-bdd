@@ -66,6 +66,10 @@ unit *args:
 build:
     uv build
 
+# Publish new release to PyPI
+publish: build
+    @UV_PUBLISH_TOKEN=${PYPI_PUBLISH_TOKEN} uv publish
+
 # Regenerate uv.lock
 lock:
     uv lock
