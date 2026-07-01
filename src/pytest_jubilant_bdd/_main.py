@@ -236,9 +236,20 @@ def is_deployed(context: Context, app: str, model: str | None) -> None:
         )
 
 
-@given(
-    flexible("I set '{option}' for app '{app}' to '{value}' [in model '{model}']"),
-)
+@given(flexible("I reset '{option}' for app '{app}' [in model '{model}']"))
+def reset_app_config(
+    context: Context,
+    option: str,
+    app: str,
+    model: str | None,
+) -> None:
+    """Reset a configuration option for a deployed application to its default."""
+    juju = context.get_juju(model)
+
+    juju.config(app, reset=option)
+
+
+@given(flexible("I set '{option}' for app '{app}' to '{value}' [in model '{model}']"))
 def set_app_config(
     context: Context,
     option: str,

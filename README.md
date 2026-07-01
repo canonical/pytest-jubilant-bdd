@@ -29,6 +29,8 @@ pytest-jubilant-bdd package include:
   are currently integrated.
 * `is_deployed`: A `given` step handler for asserting that an application is
   currently deployed on a Juju model.
+* `reset_app_config`: A `given` step handler for resetting a configuration
+  option on a deployed application to its default.
 * `set_app_config`: A `given` step handler for setting a configuration option
   on a deployed application.
 * `run_action`: A `when` step handler for running a Juju action on one or

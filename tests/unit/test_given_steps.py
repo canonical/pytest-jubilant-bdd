@@ -33,6 +33,7 @@ from pytest_jubilant_bdd._main import (
     is_deployed,
     is_integrated,
     model_exists,
+    reset_app_config,
     set_app_config,
 )
 
@@ -400,6 +401,53 @@ class TestIsDeployed:
             match="'slurmctld' is not deployed in model 'test'",
         ):
             is_deployed(context, "slurmctld", "test")
+
+
+class TestResetAppConfig:
+    """Test the ``reset_app_config`` *Given* step handler.
+
+    Notes:
+        Error paths are tested by calling the handler directly rather
+        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
+        before the test body, so exceptions raised during step execution
+        cannot be caught with ``pytest.raises``.
+    """
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Reset app config")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``reset_app_config`` with only the required clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "config",
+            "slurmctld",
+            "--reset",
+            "debug",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Reset app config in model")
+    def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
+        """Test ``reset_app_config`` with the ``in model`` optional clause.
+
+        Notes:
+            The ``flexible`` parser allows optional clauses to appear in any
+            order, so a single test exercising the optional is sufficient.
+        """
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "config",
+            "--model",
+            f"test2-{MODEL_SUFFIX}",
+            "slurmctld",
+            "--reset",
+            "debug",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``reset_app_config`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            reset_app_config(context, "debug", "slurmctld", "nonexistent")
 
 
 class TestSetAppConfig:
