@@ -33,6 +33,6 @@ jobs:
 
   publish:
     needs: [ci, tag-and-release]
-    permissions:
-      id-token: write
     uses: canonical/hpc-team/.github/workflows/publish-python-package.yaml@main
+    secrets:
+      PYPI_PUBLISH_TOKEN: ${{ secrets.PYPI_PUBLISH_TOKEN }}
