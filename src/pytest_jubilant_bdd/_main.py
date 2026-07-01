@@ -263,6 +263,20 @@ def set_app_config(
     juju.config(app, values={option: value})
 
 
+@given(parsers.parse("I set '{option}' for model '{model}' to '{value}'"))
+def set_model_config(context: Context, option: str, model: str, value: str) -> None:
+    """Set a configuration option for a Juju model."""
+    if option == "cloudinit-userdata":
+        path = Path(value)
+        if not path.is_file():
+            raise FileNotFoundError(f"Cloud-init user data file not found: '{value}'") from None
+
+        value = path.read_text()
+
+    juju = context.get_juju(model)
+    juju.model_config({option: value})
+
+
 # When steps - Actions
 
 

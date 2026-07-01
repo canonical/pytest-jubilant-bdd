@@ -35,6 +35,7 @@ from pytest_jubilant_bdd._main import (
     model_exists,
     reset_app_config,
     set_app_config,
+    set_model_config,
 )
 
 # ruff: enable[SLF001]
@@ -493,3 +494,87 @@ class TestSetAppConfig:
         """``set_app_config`` raises when the model is not in the context."""
         with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
             set_app_config(context, "debug", "slurmctld", "true", "nonexistent")
+
+
+class TestSetModelConfig:
+    """Test the ``set_model_config`` *Given* step handler.
+
+    Notes:
+        Error paths and the ``cloudinit-userdata`` file-reading path are
+        tested by calling the handler directly rather than via ``@scenario``
+        because ``@scenario`` runs the Gherkin steps before the test body, so
+        exceptions raised during step execution cannot be caught with
+        ``pytest.raises``.
+    """
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Set model config")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``set_model_config`` with the required clauses."""
+        model_config_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][1] == "model-config"
+        ]
+        assert len(model_config_calls) == 1
+        assert model_config_calls[0].args[0] == [
+            "juju",
+            "model-config",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "update-status-hook-interval=10s",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``set_model_config`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            set_model_config(context, "update-status-hook-interval", "nonexistent", "10s")
+
+    def test_reads_cloudinit_userdata_file(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        fs: FakeFilesystem,
+    ) -> None:
+        """``set_model_config`` reads the file at ``value`` for ``cloudinit-userdata``."""
+        cloudinit_path = "/tmp/cloudinit.yaml"
+        cloudinit_content = "#cloud-config\npackages:\n  - curl\n"
+        fs.create_file(cloudinit_path, contents=cloudinit_content)
+
+        # Add the model directly to the testing context so the handler can
+        # resolve a `Juju` harness without going through the `add_model`
+        # Gherkin step.
+        context.models.add("test")
+
+        set_model_config(context, "cloudinit-userdata", "test", cloudinit_path)
+
+        model_config_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][1] == "model-config"
+        ]
+        assert len(model_config_calls) == 1
+        assert model_config_calls[0].args[0] == [
+            "juju",
+            "model-config",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            f"cloudinit-userdata={cloudinit_content}",
+        ]
+
+    def test_raises_when_cloudinit_userdata_file_missing(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+    ) -> None:
+        """``set_model_config`` raises ``FileNotFoundError`` when the cloud-init file is missing."""
+        # Add the model directly to the testing context so the handler can
+        # resolve a `Juju` harness. The file-read error must surface before
+        # the subprocess call, so the model lookup is irrelevant.
+        context.models.add("test")
+
+        with pytest.raises(
+            FileNotFoundError,
+            match="Cloud-init user data file not found: '/tmp/missing-cloudinit.yaml'",
+        ):
+            set_model_config(context, "cloudinit-userdata", "test", "/tmp/missing-cloudinit.yaml")
