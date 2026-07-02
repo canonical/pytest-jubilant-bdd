@@ -41,7 +41,7 @@ from pytest_jubilant_bdd._main import (
 )
 
 # ruff: enable[SLF001]
-from pytest_jubilant_bdd.errors import CharmNotFoundError, ModelNotFoundError
+from pytest_jubilant_bdd.errors import ModelNotFoundError
 
 
 @pytest.fixture(scope="function")
@@ -327,7 +327,7 @@ class TestDeployLocal:
         monkeypatch.delenv(slurmctld_charm_path, raising=False)
 
         with pytest.raises(
-            CharmNotFoundError,
+            FileNotFoundError,
             match=f"Charm not found: environment variable '{slurmctld_charm_path}' is not set.",
         ):
             deploy_local(context, "slurmctld", None, None, None, 1, None)
@@ -337,7 +337,7 @@ class TestDeployLocal:
         nonexistent = Path("/nonexistent/does-not-exist.charm")
 
         with pytest.raises(
-            CharmNotFoundError,
+            FileNotFoundError,
             match=f"Charm not found: '{nonexistent}' is not a file",
         ):
             deploy_local(context, "slurmctld", nonexistent, None, None, 1, None)

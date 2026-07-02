@@ -38,7 +38,7 @@ from ._constants import (
 )
 from ._context import Context
 from ._parsers import flexible, make_dict, make_list
-from .errors import AppNotFoundError, CharmNotFoundError, TooManyDeployedAppsError
+from .errors import AppNotFoundError, TooManyDeployedAppsError
 
 # ---
 # `pytest` hooks.
@@ -204,7 +204,7 @@ def deploy_local(
         try:
             path = Path(os.environ[env_var])
         except KeyError:
-            raise CharmNotFoundError(
+            raise FileNotFoundError(
                 f"Charm not found: environment variable '{env_var}' is not set. "
                 f"Either set the environment variable '{env_var}' to the path of "
                 f"the local '*.charm' file, or provide a path in the Gherkin step "
@@ -212,7 +212,7 @@ def deploy_local(
             ) from None
 
     if not path.is_file():
-        raise CharmNotFoundError(f"Charm not found: '{path}' is not a file") from None
+        raise FileNotFoundError(f"Charm not found: '{path}' is not a file") from None
 
     _deploy(
         context,

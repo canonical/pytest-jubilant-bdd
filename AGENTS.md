@@ -64,7 +64,7 @@ if path is None:
     try:
         path = Path(os.environ[env_var])
     except KeyError:
-        raise CharmNotFoundError(...) from None
+        raise FileNotFoundError(...) from None
 ```
 
 Not:

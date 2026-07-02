@@ -20,7 +20,7 @@ Write unit tests for the reusable Gherkin step handlers defined in `src/pytest_j
    - `_parsers.py` — `flexible` parser, `make_list`, `make_dict` converters, `%...%` block syntax.
    - `_assertions.py` — `assertions.app`, `assertions.model`, `assertions.unit` assertion classes.
    - `_constants.py` — `AgentStatus`, `WorkloadStatus`, flag names, status capture group patterns.
-   - `errors.py` — Custom exception classes (`AppNotFoundError`, `CharmNotFoundError`, `ModelNotFoundError`, `TooManyDeployedAppsError`, `WaitError`).
+    - `errors.py` — Custom exception classes (`AppNotFoundError`, `ModelNotFoundError`, `TooManyDeployedAppsError`, `WaitError`).
    - `tests/unit/helpers.py` — Mock data builders: `make_status_json`, `make_app_with_relation`, `make_app_without_relation`, `make_task_json`.
    - `tests/unit/constants.py` — Path constants only: `REUSABLE_GIVEN_STEP_TESTS`, `REUSABLE_WHEN_STEP_TESTS`, `REUSABLE_THEN_STEP_TESTS`, `MODEL_SUFFIX`.
    - `tests/unit/conftest.py` — Shared fixtures: `mock_subprocess_run`, `mock_status_json`, `_mock_secrets_token_hex`.
@@ -209,8 +209,8 @@ def test_raises_when_env_var_missing(
     """
     monkeypatch.delenv("SLURMCTLD_CHARM_PATH", raising=False)
 
-    with pytest.raises(CharmNotFoundError, match="...is not set"):
-        deploy_local(context, "slurmctld", None, None, None)
+    with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+        add_unit(context, 3, "slurmctld", "nonexistent")
 ```
 
 ## Testing `juju status`-based handlers

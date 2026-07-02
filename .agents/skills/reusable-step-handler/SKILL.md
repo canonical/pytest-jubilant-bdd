@@ -235,7 +235,6 @@ ASK FIRST if adding a
 
 | Error class | When to raise |
 |------------|--------------|
-| `CharmNotFoundError` | Missing `*.charm` file or unset `<APP>_CHARM_PATH` env var |
 | `AppNotFoundError` | `context.get_app()` failed; app not in `juju status` |
 | `ModelNotFoundError` | Model name not in `context.models` |
 | `TooManyDeployedAppsError` | Multiple apps with the same name; tell user to scope by model |
@@ -247,8 +246,8 @@ When wrapping a `KeyError` or `OSError`, use `raise … from None` to keep the t
 try:
     path = Path(os.environ[env_var])
 except KeyError:
-    raise CharmNotFoundError(
-        f"Charm not found: environment variable '{env_var}' is not set. "
+    raise FileNotFoundError(
+        f"App not found: environment variable '{env_var}' is not set. "
         f"Either set the environment variable '{env_var}' to the path of "
         f"the local '*.charm' file, or provide a path in the Gherkin step …"
     ) from None
@@ -263,7 +262,7 @@ if path is None:
     try:
         path = Path(os.environ[env_var])
     except KeyError:
-        raise CharmNotFoundError(...) from None
+        raise FileNotFoundError(...) from None
 
 # Bad: buried
 path = Path(os.environ[env_var]) if env_var in os.environ else None

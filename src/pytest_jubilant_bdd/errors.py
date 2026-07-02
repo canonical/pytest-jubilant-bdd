@@ -19,10 +19,6 @@ class AppNotFoundError(Exception):
     """Error raised if an application is not found."""
 
 
-class CharmNotFoundError(FileNotFoundError):
-    """Error raised if a ``*.charm`` file is not found on the system."""
-
-
 class ModelNotFoundError(Exception):
     """Error raised if model is not found."""
 
