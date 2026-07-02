@@ -241,7 +241,7 @@ class TestDeployLocal:
 
         with pytest.raises(
             CharmNotFoundError,
-            match=(f"Charm not found: environment variable '{slurmctld_charm_path}' is not set."),
+            match=f"Charm not found: environment variable '{slurmctld_charm_path}' is not set.",
         ):
             deploy_local(context, "slurmctld", None, None, None, 1)
 
