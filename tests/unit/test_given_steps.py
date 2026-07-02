@@ -33,6 +33,7 @@ from pytest_jubilant_bdd._main import (
     is_deployed,
     is_integrated,
     model_exists,
+    pack_charm,
     reset_app_config,
     reset_model_config,
     set_app_config,
@@ -73,6 +74,25 @@ def _set_slurmctld_charm_env(
     omitted from the Gherkin step.
     """
     monkeypatch.setenv(slurmctld_charm_path, fake_charm_file)
+
+
+@pytest.fixture(scope="function")
+def fake_packed_charm(fs: FakeFilesystem) -> None:
+    """Create fake ``*.charm`` files for ``pack_charm`` tests.
+
+    ``pack_charm`` uses ``Path.cwd()`` when no project directory is
+    given, so the fake file must exist at the fake filesystem root. The
+    optional-clause test uses ``/path/to/project`` as its project
+    directory, so a second fake file is created there.
+    """
+    fs.create_file(
+        "/my-charm_ubuntu-24.04-amd64.charm",
+        contents="fake charm contents",
+    )
+    fs.create_file(
+        "/path/to/project/my-charm_ubuntu-24.04-amd64.charm",
+        contents="fake charm contents",
+    )
 
 
 class TestAddModel:
@@ -138,6 +158,72 @@ class TestAddUnit:
         """``add_unit`` raises when the model is not in the context."""
         with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
             add_unit(context, 3, "slurmctld", "nonexistent")
+
+
+class TestPackCharm:
+    """Test the ``pack_charm`` *Given* step handler.
+
+    Notes:
+        Error paths are tested by calling the handler directly rather
+        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
+        before the test body, so exceptions raised during step execution
+        cannot be caught with ``pytest.raises``.
+    """
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Pack charm")
+    def test_required(
+        mock_subprocess_run: MagicMock,
+        fake_packed_charm: None,
+    ) -> None:
+        """Test ``pack_charm`` with only the required clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "charmcraft",
+            "-v",
+            "pack",
+        ]
+        assert mock_subprocess_run.call_args[1]["cwd"] == Path("/")
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Pack charm from project directory")
+    def test_with_optionals(
+        mock_subprocess_run: MagicMock,
+        fake_packed_charm: None,
+    ) -> None:
+        """Test ``pack_charm`` with all optional clauses."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "charmcraft",
+            "-v",
+            "pack",
+        ]
+        assert mock_subprocess_run.call_args[1]["cwd"] == Path("/path/to/project")
+
+    def test_raises_when_charmcraft_missing(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+    ) -> None:
+        """``pack_charm`` raises when ``charmcraft`` is not on PATH."""
+        mock_subprocess_run.side_effect = FileNotFoundError
+
+        with pytest.raises(
+            FileNotFoundError,
+            match="'charmcraft' is not installed or not found on PATH",
+        ):
+            pack_charm(context, "my-charm", None)
+
+    def test_raises_when_no_charm_file_found(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        fs: FakeFilesystem,
+    ) -> None:
+        """``pack_charm`` raises when no ``*.charm`` file is produced."""
+        with pytest.raises(
+            FileNotFoundError,
+            match="No .charm file found for 'my-charm'",
+        ):
+            pack_charm(context, "my-charm", "/path/to/project")
 
 
 class TestDeploy:

@@ -25,6 +25,8 @@ pytest-jubilant-bdd package include:
 * `integrate`: A `given` step handler for integrating two Juju applications.
 * `model_exists`: A `given` step handler for asserting that a Juju model
   currently exists.
+* `pack_charm`: A `given` step handler for packing a charm from a
+  project directory using ``charmcraft``.
 * `is_integrated`: A `given` step handler for asserting that two applications
   are currently integrated.
 * `is_deployed`: A `given` step handler for asserting that an application is

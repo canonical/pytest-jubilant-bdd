@@ -2,6 +2,12 @@ Feature: Reusable `given` steps
   Scenario: Add model
     Given I add model 'test'
 
+  Scenario: Pack charm
+    Given I pack a 'my-charm' charm
+
+  Scenario: Pack charm from project directory
+    Given I pack a 'my-charm' charm from project directory '/path/to/project'
+
   Scenario: Deploy
     Given I deploy 'slurmctld'
 

@@ -18,6 +18,7 @@
 __all__ = ["Context"]
 
 import os
+import subprocess
 from collections.abc import Iterator, Mapping
 from pathlib import Path
 from typing import Any, cast
@@ -109,6 +110,35 @@ def add_unit(context: Context, num_units: int, app: str, model: str | None) -> N
     juju = context.get_juju(model)
 
     juju.add_unit(app, num_units=num_units)
+
+
+@given(
+    flexible("I pack %an?% '{app}' charm [from project directory '{project_dir}']"),
+)
+def pack_charm(context: Context, app: str, project_dir: str | None) -> None:
+    """Pack a charm from a project directory using ``charmcraft``.
+
+    If ``project_dir`` is not provided, then the current working directory
+    is used instead.
+    """
+    project = Path(project_dir) if project_dir else Path.cwd()
+
+    try:
+        subprocess.run(
+            ["charmcraft", "-v", "pack"],
+            cwd=project,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        raise FileNotFoundError("'charmcraft' is not installed or not found on PATH") from None
+
+    charms = list(project.glob(f"{app}*.charm"))
+    if not charms:
+        raise FileNotFoundError(f"No .charm file found for '{app}' in '{project}'")
+
+    charms[0].rename(f"{app}.charm")
 
 
 @given(
