@@ -31,6 +31,8 @@ pytest-jubilant-bdd package include:
   currently deployed on a Juju model.
 * `reset_app_config`: A `given` step handler for resetting a configuration
   option on a deployed application to its default.
+* `reset_model_config`: A `given` step handler for resetting a model
+  configuration option to its default.
 * `set_app_config`: A `given` step handler for setting a configuration option
   on a deployed application.
 * `set_model_config`: A `given` step handler for setting a configuration

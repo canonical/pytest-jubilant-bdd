@@ -277,6 +277,13 @@ def set_model_config(context: Context, option: str, model: str, value: str) -> N
     juju.model_config({option: value})
 
 
+@given(parsers.parse("I reset '{option}' for model '{model}'"))
+def reset_model_config(context: Context, option: str, model: str) -> None:
+    """Reset a configuration option for a Juju model to its default."""
+    juju = context.get_juju(model)
+    juju.model_config(reset=option)
+
+
 # When steps - Actions
 
 

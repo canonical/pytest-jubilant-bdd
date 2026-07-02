@@ -34,6 +34,7 @@ from pytest_jubilant_bdd._main import (
     is_integrated,
     model_exists,
     reset_app_config,
+    reset_model_config,
     set_app_config,
     set_model_config,
 )
@@ -578,3 +579,38 @@ class TestSetModelConfig:
             match="Cloud-init user data file not found: '/tmp/missing-cloudinit.yaml'",
         ):
             set_model_config(context, "cloudinit-userdata", "test", "/tmp/missing-cloudinit.yaml")
+
+
+class TestResetModelConfig:
+    """Test the ``reset_model_config`` *Given* step handler.
+
+    Notes:
+        Error paths are tested by calling the handler directly rather
+        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
+        before the test body, so exceptions raised during step execution
+        cannot be caught with ``pytest.raises``.
+    """
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Reset model config")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``reset_model_config`` with the required clauses."""
+        model_config_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][1] == "model-config"
+        ]
+        assert len(model_config_calls) == 1
+        assert model_config_calls[0].args[0] == [
+            "juju",
+            "model-config",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "--reset",
+            "update-status-hook-interval",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``reset_model_config`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            reset_model_config(context, "update-status-hook-interval", "nonexistent")
