@@ -168,6 +168,7 @@ class TestDeploy:
             "--model",
             f"test-{MODEL_SUFFIX}",
             "slurmctld",
+            "controller",
             "--base",
             "ubuntu@24.04",
             "--channel",
@@ -223,7 +224,7 @@ class TestDeployLocal:
             "--model",
             f"test-{MODEL_SUFFIX}",
             fake_charm_file,
-            "slurmctld",
+            "controller",
             "--base",
             "ubuntu@24.04",
             "--num-units",
@@ -243,7 +244,7 @@ class TestDeployLocal:
             CharmNotFoundError,
             match=f"Charm not found: environment variable '{slurmctld_charm_path}' is not set.",
         ):
-            deploy_local(context, "slurmctld", None, None, None, 1)
+            deploy_local(context, "slurmctld", None, None, None, 1, None)
 
     def test_raises_when_path_missing(self, context: Context) -> None:
         """``deploy_local`` raises when the supplied path is not a file."""
@@ -253,7 +254,7 @@ class TestDeployLocal:
             CharmNotFoundError,
             match=f"Charm not found: '{nonexistent}' is not a file",
         ):
-            deploy_local(context, "slurmctld", nonexistent, None, None, 1)
+            deploy_local(context, "slurmctld", nonexistent, None, None, 1, None)
 
 
 class TestIntegrate:

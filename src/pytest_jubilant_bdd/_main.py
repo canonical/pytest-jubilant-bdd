@@ -117,7 +117,8 @@ def add_unit(context: Context, num_units: int, app: str, model: str | None) -> N
         "[in model '{model}'] "
         "[from channel '{channel}'] "
         "[on base '{base}'] "
-        "[with '{num_units}' %units?%]"
+        "[with '{num_units}' %units?%] "
+        "[with name '{name}']"
     ),
     converters={"num_units": lambda v: int(v) if v is not None else 1},
 )
@@ -128,9 +129,18 @@ def deploy(
     channel: str | None,
     base: str | None,
     num_units: int,
+    name: str | None,
 ) -> None:
     """Deploy an application from Charmhub."""
-    _deploy(context, app, model=model, channel=channel, base=base, num_units=num_units)
+    _deploy(
+        context,
+        app,
+        model=model,
+        channel=channel,
+        base=base,
+        num_units=num_units,
+        name=name,
+    )
 
 
 @given(
@@ -139,7 +149,8 @@ def deploy(
         "[located at '{path}'] "
         "[in model '{model}'] "
         "[on base '{base}'] "
-        "[with '{num_units}' %units?%]"
+        "[with '{num_units}' %units?%] "
+        "[with name '{name}']"
     ),
     converters={
         "path": lambda v: Path(v) if v is not None else v,
@@ -153,6 +164,7 @@ def deploy_local(
     model: str | None,
     base: str | None,
     num_units: int,
+    name: str | None,
 ) -> None:
     """Deploy an application from a local ``*.charm`` file."""
     if path is None:
@@ -172,7 +184,15 @@ def deploy_local(
     if not path.is_file():
         raise CharmNotFoundError(f"Charm not found: '{path}' is not a file") from None
 
-    _deploy(context, path.resolve(), app, model=model, base=base, num_units=num_units)
+    _deploy(
+        context,
+        path.resolve(),
+        app,
+        model=model,
+        base=base,
+        num_units=num_units,
+        name=name,
+    )
 
 
 def _deploy(
@@ -184,12 +204,13 @@ def _deploy(
     model: str | None = None,
     channel: str | None = None,
     base: str | None = None,
+    name: str | None = None,
     num_units: int = 1,
 ) -> None:
     """Deploy an application."""
     juju = context.get_juju(model)
 
-    juju.deploy(charm, app, base=base, channel=channel, num_units=num_units)
+    juju.deploy(charm, name or app, base=base, channel=channel, num_units=num_units)
 
 
 @given(parsers.parse("I integrate '{app_one}' with '{app_two}'"))

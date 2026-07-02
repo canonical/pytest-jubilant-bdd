@@ -7,7 +7,7 @@ Feature: Reusable `given` steps
 
   Scenario: Deploy with all optionals
     Given I add model 'test'
-    Given I deploy 'slurmctld' in model 'test' from channel 'latest/edge' on base 'ubuntu@24.04' with '3' units
+    Given I deploy 'slurmctld' in model 'test' from channel 'latest/edge' on base 'ubuntu@24.04' with '3' units with name 'controller'
 
   Scenario: Deploy local
     Given I add model 'test'
@@ -15,7 +15,7 @@ Feature: Reusable `given` steps
 
   Scenario: Deploy local with all optionals
     Given I add model 'test'
-    Given I deploy 'slurmctld' from a local charm located at '/tmp/fake.charm' in model 'test' on base 'ubuntu@24.04' with '3' units
+    Given I deploy 'slurmctld' from a local charm located at '/tmp/fake.charm' in model 'test' on base 'ubuntu@24.04' with '3' units with name 'controller'
 
   Scenario: Integrate
     Given I integrate 'slurmctld' with 'slurmd'
