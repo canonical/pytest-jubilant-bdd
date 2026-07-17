@@ -168,12 +168,20 @@ class Context:
             if that method's ``timeout`` parameter is not specified.
         action_results: Stack that tracks the results of ``juju run``.
         exec_results: Stack that tracks the results of ``juju exec``.
+        scenario_state:
+            Per-scenario mutable mapping for sharing arbitrary values between
+            Given/When/Then steps. Cleared automatically before each scenario by
+            an autouse fixture registered by the plugin. Use semantic keys
+            (for example, ``context.scenario_state["initial_token"]``) rather
+            than storing raw :class:`jubilant.Task` objects — those belong on
+            the ``action_results``/``exec_results`` stacks.
         models: Mapping that tracks models in the testing context.
     """
 
     wait_timeout: float = DEFAULT_WAIT_TIMEOUT
     action_results: stack[Task] = field(default_factory=lambda: stack[Task](), init=False)
     exec_results: stack[Task] = field(default_factory=lambda: stack[Task](), init=False)
+    scenario_state: dict[str, Any] = field(default_factory=dict, init=False)
     models: ModelMapping = field(default_factory=ModelMapping, init=False)
     _default_model: str | None = field(default=None, init=False)
 
@@ -181,6 +189,16 @@ class Context:
     def default_model(self) -> str | None:
         """Get the default model of this testing context."""
         return self._default_model
+
+    def clear_scenario_state(self) -> None:
+        """Clear all per-scenario state.
+
+        Removes every key from :attr:`scenario_state`. The plugin registers an
+        autouse, function-scoped fixture that calls this before each scenario,
+        so consumers normally do not need to call it manually. It is provided
+        for tests or steps that need to reset state mid-scenario.
+        """
+        self.scenario_state.clear()
 
     @default_model.setter
     def default_model(self, value: str | None) -> None:

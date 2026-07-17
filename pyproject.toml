@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "pytest-jubilant-bdd"
 version = "0.6.1"
@@ -45,6 +49,9 @@ include = [
 
 [tool.coverage.report]
 show_missing = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pytest_jubilant_bdd"]
 
 [tool.ruff]
 line-length = 99

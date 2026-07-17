@@ -91,6 +91,17 @@ def context(request: pytest.FixtureRequest) -> Iterator[Context]:
         context.models.destroy(destroy_storage=True, force=True)
 
 
+@pytest.fixture(scope="function", autouse=True)
+def _reset_scenario_state(context: Context) -> None:
+    """Clear per-scenario state before each test.
+
+    The ``context`` fixture is session-scoped, so :attr:`Context.scenario_state`
+    would otherwise accumulate values across scenarios. This autouse fixture
+    clears it before each test so each scenario starts with an empty mapping.
+    """
+    context.clear_scenario_state()
+
+
 # ---
 # Gherkin step handlers.
 # ---
