@@ -168,12 +168,14 @@ class Context:
             if that method's ``timeout`` parameter is not specified.
         action_results: Stack that tracks the results of ``juju run``.
         exec_results: Stack that tracks the results of ``juju exec``.
+        ssh_results: Stack that tracks the results of ``juju ssh``.
         models: Mapping that tracks models in the testing context.
     """
 
     wait_timeout: float = DEFAULT_WAIT_TIMEOUT
     action_results: stack[Task] = field(default_factory=lambda: stack[Task](), init=False)
     exec_results: stack[Task] = field(default_factory=lambda: stack[Task](), init=False)
+    ssh_results: stack[str] = field(default_factory=lambda: stack[str](), init=False)
     models: ModelMapping = field(default_factory=ModelMapping, init=False)
     _default_model: str | None = field(default=None, init=False)
 

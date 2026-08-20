@@ -428,6 +428,33 @@ def run_exec(
         # to "machine" or "unit". Otherwise, this handler will not match the Gherkin step.
 
 
+@when(
+    flexible(
+        r"I ssh into %(?P<type_>machine|unit) '(?P<target>[^']+)'% "
+        r"and I execute '{command}'" + OPTIONAL_MODEL_CLAUSE
+    ),
+)
+def run_ssh(
+    context: Context,
+    type_: str,
+    target: str,
+    command: str,
+    model: str | None,
+) -> None:
+    """SSH into a machine or unit and execute a command."""
+    juju = context.get_juju(model)
+
+    match type_:
+        case "machine":
+            result = juju.ssh(int(target), command)
+        case "unit":
+            result = juju.ssh(target, command)
+
+    context.ssh_results.push(result)  # type: ignore[reportPossiblyUnboundVariable] # noqa
+    # `result` cannot be unbound because this step handler will always match `type_`
+    # to "machine" or "unit". Otherwise, this handler will not match the Gherkin step.
+
+
 # Then steps - Attestation and verification.
 
 

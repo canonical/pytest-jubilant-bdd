@@ -19,3 +19,12 @@ Feature: Reusable `when` steps
 
   Scenario: Exec command on multiple units in model
     When I execute 'systemctl restart slurmd' on units 'slurmd/0', 'slurmd/1', and 'slurmd/2' in model 'test'
+
+  Scenario: SSH into machine and execute command
+    When I ssh into machine '0' and I execute 'hostname'
+
+  Scenario: SSH into unit and execute command
+    When I ssh into unit 'slurmctld/0' and I execute 'hostname'
+
+  Scenario: SSH into unit and execute command in model
+    When I ssh into unit 'slurmctld/0' and I execute 'hostname' in model 'test'

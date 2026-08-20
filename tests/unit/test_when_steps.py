@@ -38,6 +38,8 @@ def _reset_stacks(context: Context) -> None:
         context.action_results.pop()
     while not context.exec_results.is_empty():
         context.exec_results.pop()
+    while not context.ssh_results.is_empty():
+        context.ssh_results.pop()
     context.default_model = None
 
 
@@ -176,3 +178,61 @@ class TestRunExec:
         assert units_called == ["slurmd/0", "slurmd/1"]
 
         assert len(context.exec_results) == 2
+
+
+class TestRunSSH:
+    """Test the ``run_ssh`` *When* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "SSH into machine and execute command")
+    def test_ssh_into_machine(context: Context, mock_subprocess_run: MagicMock) -> None:
+        """Test ``run_ssh`` with a machine target."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "ssh",
+            "0",
+            "hostname",
+        ]
+
+        assert len(context.ssh_results) == 1
+        result = context.ssh_results.peek()
+        assert isinstance(result, str)
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "SSH into unit and execute command")
+    def test_ssh_into_unit(context: Context, mock_subprocess_run: MagicMock) -> None:
+        """Test ``run_ssh`` with a unit target."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "ssh",
+            "slurmctld/0",
+            "hostname",
+        ]
+
+        assert len(context.ssh_results) == 1
+        result = context.ssh_results.peek()
+        assert isinstance(result, str)
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "SSH into unit and execute command in model")
+    def test_with_optionals(context: Context, mock_subprocess_run: MagicMock) -> None:
+        """Test ``run_ssh`` with the optional ``in model`` clause.
+
+        Notes:
+            The ``flexible`` parser allows optional clauses to appear in any
+            order, so a single test exercising the optional is sufficient.
+        """
+        ssh_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][0:2] == ["juju", "ssh"]
+        ]
+        assert len(ssh_calls) == 1
+
+        call_args = ssh_calls[0].args[0]
+        assert "--model" in call_args
+        assert f"test-{MODEL_SUFFIX}" in call_args
+        assert call_args[4] == "slurmctld/0"
+        assert call_args[5] == "hostname"
+
+        assert len(context.ssh_results) == 1

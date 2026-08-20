@@ -46,6 +46,8 @@ pytest-jubilant-bdd package include:
   more units.
 * `run_exec`: A `when` step handler for executing a command on one or more
   machines or units.
+* `run_ssh`: A `when` step handler for SSHing into a machine or unit and
+  executing a command.
 * `assert_all_agent_status`: A `then` step handler for asserting the status
   of all agents in one or more models.
 * `assert_workload_status`: A `then` step handler for asserting the workload
