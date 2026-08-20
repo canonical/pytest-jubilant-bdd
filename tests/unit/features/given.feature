@@ -57,6 +57,13 @@ Feature: Reusable `given` steps
     Given I add model 'test'
     Given I add '2' units to app 'slurmctld' in model 'test'
 
+  Scenario: Remove unit
+    Given I remove unit 'slurmctld/0'
+
+  Scenario: Remove unit in model
+    Given I add model 'test'
+    And I remove units 'slurmctld/0', 'slurmctld/1', and 'slurmctld/2' in model 'test'
+
   Scenario: Set app config
     Given I add model 'test'
     Given I deploy 'slurmctld'

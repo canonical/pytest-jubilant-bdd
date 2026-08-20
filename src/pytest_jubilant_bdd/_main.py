@@ -117,6 +117,20 @@ def add_unit(context: Context, num_units: int, app: str, model: str | None) -> N
 
 
 @given(
+    flexible(
+        r"I remove %units? (?P<units>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
+        + OPTIONAL_MODEL_CLAUSE
+    ),
+    converters={"units": make_list},
+)
+def remove_unit(context: Context, units: list[str], model: str | None) -> None:
+    """Remove one or more units from a deployed application."""
+    juju = context.get_juju(model)
+
+    juju.remove_unit(*units)
+
+
+@given(
     flexible("I pack %an?% '{app}' charm [from project directory '{project_dir}']"),
 )
 def pack_charm(context: Context, app: str, project_dir: str | None) -> None:

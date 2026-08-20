@@ -35,6 +35,7 @@ from pytest_jubilant_bdd._main import (
     is_integrated,
     model_exists,
     pack_charm,
+    remove_unit,
     reset_app_config,
     reset_model_config,
     set_app_config,
@@ -170,6 +171,53 @@ class TestAddUnit:
         """``add_unit`` raises when the model is not in the context."""
         with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
             add_unit(context, 3, "slurmctld", "nonexistent")
+
+
+class TestRemoveUnit:
+    """Test the ``remove_unit`` *Given* step handler.
+
+    Notes:
+        Error paths are tested by calling the handler directly rather
+        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
+        before the test body, so exceptions raised during step execution
+        cannot be caught with ``pytest.raises``.
+    """
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove unit")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``remove_unit`` with only the required clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "remove-unit",
+            "--no-prompt",
+            "slurmctld/0",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove unit in model")
+    def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
+        """Test ``remove_unit`` with all optional clauses.
+
+        Notes:
+            The ``flexible`` parser allows optional clauses to appear in any
+            order, so a single test exercising all optionals is sufficient.
+        """
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "remove-unit",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "--no-prompt",
+            "slurmctld/0",
+            "slurmctld/1",
+            "slurmctld/2",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``remove_unit`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            remove_unit(context, ["slurmctld/0"], "nonexistent")
 
 
 class TestPackCharm:
