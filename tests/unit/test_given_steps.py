@@ -15,7 +15,10 @@
 
 """Unit tests for reusable *Given* Gherkin steps."""
 
+import json
+from collections.abc import Callable
 from pathlib import Path
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -31,6 +34,7 @@ from pytest_jubilant_bdd._main import (
     add_unit,
     deploy_local,
     integrate,
+    is_app_config_set,
     is_deployed,
     is_integrated,
     model_exists,
@@ -106,6 +110,40 @@ def _reset_context(context: Context) -> None:
     persists across tests. Clearing it ensures a clean slate.
     """
     context.default_model = None
+
+
+@pytest.fixture(scope="function")
+def mock_config_json(mock_subprocess_run: MagicMock) -> None:
+    """Configure ``mock_subprocess_run`` to return a valid config JSON.
+
+    ``is_app_config_set`` calls ``juju.config()`` (which runs
+    ``juju config --format json``), so the mock must return a config
+    payload for that command.
+    """
+    mock_subprocess_run.side_effect = _config_side_effect()
+
+
+def _config_side_effect(
+    config_value: bool = True,
+) -> Callable[..., MagicMock]:
+    """Build a ``subprocess.run`` side effect returning config JSON.
+
+    Args:
+        config_value: Value of the ``debug`` option in the ``juju config`` payload.
+    """
+
+    def _side_effect(*args: object, **kwargs: object) -> MagicMock:
+        cmd = cast(list[str], args[0])
+        if cmd[0:2] == ["juju", "config"]:
+            return MagicMock(
+                stdout=json.dumps(
+                    {"settings": {"debug": {"type": "bool", "value": config_value}}}
+                ),
+                stderr="",
+            )
+        return MagicMock(stdout="", stderr="")
+
+    return _side_effect
 
 
 class TestAddModel:
@@ -634,6 +672,48 @@ class TestIsDeployed:
             match="'slurmctld' is not deployed in model 'test'",
         ):
             is_deployed(context, "slurmctld", "test")
+
+
+class TestIsAppConfigSet:
+    """Test the ``is_app_config_set`` *Given* step handler.
+
+    Notes:
+        Error paths are tested by calling the handler directly rather
+        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
+        before the test body, so exceptions raised during step execution
+        cannot be caught with ``pytest.raises``.
+    """
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "App config is set")
+    def test_required(mock_subprocess_run: MagicMock, mock_config_json: None) -> None:
+        """Test ``is_app_config_set`` with only the required clause.
+
+        Notes:
+            No assertion is needed: the step handler raises ``AssertionError`` if
+            the config value does not match. Reaching this point means the
+            assertion passed.
+        """
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "App config is set in model")
+    def test_with_optionals(mock_subprocess_run: MagicMock, mock_config_json: None) -> None:
+        """Test ``is_app_config_set`` with the ``in model`` optional clause.
+
+        Notes:
+            No assertion is needed: the step handler raises ``AssertionError`` if
+            the config value does not match. Reaching this point means the
+            assertion passed.
+        """
+
+    def test_raises_when_not_set(self, context: Context, mock_subprocess_run: MagicMock) -> None:
+        """``is_app_config_set`` raises when the config value does not match."""
+        mock_subprocess_run.side_effect = _config_side_effect(config_value=False)
+        with pytest.raises(
+            AssertionError,
+            match="Option 'debug' for app 'slurmctld' is not set to 'true'",
+        ):
+            is_app_config_set(context, "debug", "slurmctld", "true", None)
 
 
 class TestResetAppConfig:

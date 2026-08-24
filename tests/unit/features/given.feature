@@ -74,6 +74,16 @@ Feature: Reusable `given` steps
     Given I deploy 'slurmctld' in model 'test2'
     Given I set 'debug' for app 'slurmctld' to 'true' in model 'test2'
 
+  Scenario: App config is set
+    Given I add model 'test'
+    And I deploy 'slurmctld'
+    And 'debug' for app 'slurmctld' is set to 'true'
+
+  Scenario: App config is set in model
+    Given I add model 'test2'
+    And I deploy 'slurmctld' in model 'test2'
+    And 'debug' for app 'slurmctld' is set to 'true' in model 'test2'
+
   Scenario: Set model config
     Given I add model 'test'
     Given I set 'update-status-hook-interval' for model 'test' to '10s'

@@ -281,6 +281,29 @@ def model_exists(context: Context, model: str) -> None:
     assert model in context.models
 
 
+@given(flexible("'{option}' for app '{app}' is set to '{value}' " + OPTIONAL_MODEL_CLAUSE))
+def is_app_config_set(
+    context: Context,
+    option: str,
+    app: str,
+    value: str,
+    model: str | None,
+) -> None:
+    """Verify that a configuration option for a deployed application is set to a value."""
+    juju = context.get_juju(model)
+    config = juju.config(app)
+    actual = config.get(option)
+    if isinstance(actual, bool):
+        matches = str(actual).lower() == value.lower()
+    else:
+        matches = str(actual) == value
+    if not matches:
+        message = f"Option '{option}' for app '{app}' is not set to '{value}'"
+        if model:
+            message += f" in model '{model}'"
+        raise AssertionError(message)
+
+
 @given(flexible("'{app_one}' is integrated with '{app_two}' " + OPTIONAL_MODEL_CLAUSE))
 def is_integrated(context: Context, app_one: str, app_two: str, model: str | None) -> None:
     """Verify that two applications are integrated."""

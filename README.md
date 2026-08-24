@@ -30,6 +30,8 @@ pytest-jubilant-bdd package include:
   ``<APP>_CHARM_PATH`` environment variable is already set.
 * `remove_unit`: A `given` step handler for removing one or more units
   from a deployed application.
+* `is_app_config_set`: A `given` step handler for verifying that a
+  configuration option on a deployed application is set to a value.
 * `is_integrated`: A `given` step handler for asserting that two applications
   are currently integrated.
 * `is_deployed`: A `given` step handler for asserting that an application is
