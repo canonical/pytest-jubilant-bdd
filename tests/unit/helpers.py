@@ -60,9 +60,6 @@ def make_status_json(
         apps: Mapping of app name to its status dict. If ``None``, an empty
             applications dict is used.
         model_name: Name of the model in the status payload.
-
-    Returns:
-        A JSON string suitable for ``mock_subprocess_run.return_value.stdout``.
     """
     model = dict(_STATUS_MODEL_TEMPLATE)
     model["name"] = model_name
@@ -86,10 +83,6 @@ def make_app_with_relation(
         app_name: Name of the application.
         related_app: Name of the related application.
         interface: Name of the relation interface.
-
-    Returns:
-        A dict suitable for use as a value in the ``applications`` mapping
-        passed to :func:`make_status_json`.
     """
     app = json.loads(json.dumps(_STATUS_APP_TEMPLATE))  # deep copy
     app["charm"] = app_name
@@ -116,10 +109,6 @@ def make_app_without_relation(app_name: str = "slurmctld") -> dict:
 
     Args:
         app_name: Name of the application.
-
-    Returns:
-        A dict suitable for use as a value in the ``applications`` mapping
-        passed to :func:`make_status_json`.
     """
     app = json.loads(json.dumps(_STATUS_APP_TEMPLATE))  # deep copy
     app["charm"] = app_name
@@ -165,9 +154,6 @@ def make_task_json(
         status: Task status (e.g., ``"completed"``, ``"failed"``).
         return_code: Return code from the action/exec command.
         results: Results dict from the action. Defaults to an empty dict.
-
-    Returns:
-        A JSON string suitable for ``mock_subprocess_run.return_value.stdout``.
     """
     task = dict(_TASK_TEMPLATE)
     task["id"] = task_id

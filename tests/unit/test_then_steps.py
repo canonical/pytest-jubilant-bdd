@@ -89,8 +89,9 @@ class TestAssertAllAgentStatus:
     def test_required(mock_subprocess_run: MagicMock, mock_status_json: None) -> None:
         """Test ``assert_all_agent_status`` with only the required clause.
 
-        No assertion is needed: the handler raises ``TimeoutError`` if the
-        assertion fails. Reaching this point means the assertion passed.
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
         """
 
     @staticmethod
@@ -99,11 +100,8 @@ class TestAssertAllAgentStatus:
         """Test ``assert_all_agent_status`` with the ``in models`` optional clause.
 
         Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising the optional is sufficient.
-
-        No assertion is needed: the handler raises ``TimeoutError`` if the
-        assertion fails. Reaching this point means the assertion passed.
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
         """
 
     @staticmethod
@@ -112,13 +110,8 @@ class TestAssertAllAgentStatus:
         """Test ``assert_all_agent_status`` with comma-free ``and`` list syntax.
 
         Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising the optional is sufficient.
-            This scenario also covers the ``'a' and 'b'`` (no comma) list
-            separator form.
-
-        No assertion is needed: the handler raises ``TimeoutError`` if the
-        assertion fails. Reaching this point means the assertion passed.
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
         """
 
     def test_raises_when_agent_not_idle(
@@ -128,14 +121,7 @@ class TestAssertAllAgentStatus:
         mock_status_json: None,
         mocker: MockerFixture,
     ) -> None:
-        """``assert_all_agent_status`` times out when the agent status is not ``'idle'``.
-
-        Notes:
-            This error path is tested by calling the handler directly rather
-            than via ``@scenario`` because ``@scenario`` runs the Gherkin steps
-            before the test body, so exceptions raised during step execution
-            cannot be caught with ``pytest.raises``.
-        """
+        """``assert_all_agent_status`` times out when the agent status is not ``'idle'``. """
         context.models.add("test")
         mocker.patch("time.monotonic", side_effect=[0.0, 999.0])
 
@@ -151,8 +137,9 @@ class TestAssertWorkloadStatus:
     def test_for_app(mock_subprocess_run: MagicMock, mock_status_json: None) -> None:
         """Test ``assert_workload_status`` for an application.
 
-        No assertion is needed: the handler raises ``TimeoutError`` if the
-        assertion fails. Reaching this point means the assertion passed.
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
         """
 
     @staticmethod
@@ -160,7 +147,8 @@ class TestAssertWorkloadStatus:
     def test_for_unit(mock_subprocess_run: MagicMock, mock_status_json: None) -> None:
         """Test ``assert_workload_status`` for a unit.
 
-        No assertion is needed: the handler raises ``TimeoutError`` if the
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
         assertion fails. Reaching this point means the assertion passed.
         """
 
@@ -201,8 +189,9 @@ class TestAssertWorkloadStatusMessage:
     def test_for_app(mock_subprocess_run: MagicMock, _mock_status_message_ready: None) -> None:
         """Test ``assert_workload_status_message`` for an application.
 
-        No assertion is needed: the handler raises ``TimeoutError`` if the
-        assertion fails. Reaching this point means the assertion passed.
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
         """
 
     @staticmethod
@@ -213,8 +202,9 @@ class TestAssertWorkloadStatusMessage:
     ) -> None:
         """Test ``assert_workload_status_message`` for a unit.
 
-        No assertion is needed: the handler raises ``TimeoutError`` if the
-        assertion fails. Reaching this point means the assertion passed.
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
         """
 
     def test_raises_when_message_not_match_app(

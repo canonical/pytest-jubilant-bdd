@@ -53,10 +53,7 @@ from pytest_jubilant_bdd.errors import ModelNotFoundError
 
 @pytest.fixture(scope="function")
 def fake_charm_file(fs: FakeFilesystem) -> str:
-    """Create a fake ``*.charm`` file on the pyfakefs filesystem.
-
-    Returns the absolute path to the created file.
-    """
+    """Create a fake ``*.charm`` file on the pyfakefs filesystem."""
     path = "/tmp/fake.charm"
     fs.create_file(path, contents="fake charm contents")
     return path
@@ -165,14 +162,7 @@ class TestAddModel:
 
 
 class TestAddUnit:
-    """Test the ``add_unit`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises``.
-    """
+    """Test the ``add_unit`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Add unit")
@@ -189,12 +179,7 @@ class TestAddUnit:
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Add unit in model")
     def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
-        """Test ``add_unit`` with the ``in model`` optional clause.
-
-        Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising the optional is sufficient.
-        """
+        """Test ``add_unit`` with the ``in model`` optional clause."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "add-unit",
@@ -212,14 +197,7 @@ class TestAddUnit:
 
 
 class TestRemoveUnit:
-    """Test the ``remove_unit`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises``.
-    """
+    """Test the ``remove_unit`` *Given* step handler. """
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove unit")
@@ -235,12 +213,7 @@ class TestRemoveUnit:
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove unit in model")
     def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
-        """Test ``remove_unit`` with all optional clauses.
-
-        Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising all optionals is sufficient.
-        """
+        """Test ``remove_unit`` with all optional clauses. """
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "remove-unit",
@@ -259,14 +232,7 @@ class TestRemoveUnit:
 
 
 class TestPackCharm:
-    """Test the ``pack_charm`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises``.
-    """
+    """Test the ``pack_charm`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Pack charm")
@@ -354,12 +320,7 @@ class TestDeploy:
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Deploy with all optionals")
     def test_with_optionals(context: Context, mock_subprocess_run: MagicMock) -> None:
-        """Test ``deploy`` with all optional clauses.
-
-        Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising all optionals is sufficient.
-        """
+        """Test ``deploy`` with all optional clauses."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "deploy",
@@ -378,28 +339,12 @@ class TestDeploy:
 
 
 class TestDeployLocal:
-    """Test the ``deploy_local`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises`` directly.
-    """
+    """Test the ``deploy_local`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Deploy local")
     def test_required(mock_subprocess_run: MagicMock, fake_charm_file: str) -> None:
-        """Test ``deploy_local`` with only the required clause.
-
-        When ``located at '{path}'`` is omitted, the handler resolves the
-        charm path from the ``<APP>_CHARM_PATH`` environment variable, which
-        is set by the ``_set_slurmctld_charm_env`` autouse fixture.
-
-        When ``in model '{model}'`` is omitted, the handler uses the default
-        Juju harness (not the one tracked in the testing context), so the
-        ``--model`` flag is not included in the deploy command.
-        """
+        """Test ``deploy_local`` with only the required clause. """
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "deploy",
@@ -410,12 +355,7 @@ class TestDeployLocal:
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Deploy local with all optionals")
     def test_with_optionals(mock_subprocess_run: MagicMock, fake_charm_file: str) -> None:
-        """Test ``deploy_local`` with all optional clauses.
-
-        Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising all optionals is sufficient.
-        """
+        """Test ``deploy_local`` with all optional clauses."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "deploy",
@@ -456,14 +396,7 @@ class TestDeployLocal:
 
 
 class TestIntegrate:
-    """Test the ``integrate`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises``.
-    """
+    """Test the ``integrate`` *Given* step handler. """
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Integrate")
@@ -479,12 +412,7 @@ class TestIntegrate:
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Integrate in model")
     def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
-        """Test ``integrate`` with the ``in model`` optional clause.
-
-        Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising the optional is sufficient.
-        """
+        """Test ``integrate`` with the ``in model`` optional clause."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "integrate",
@@ -501,14 +429,7 @@ class TestIntegrate:
 
 
 class TestModelExists:
-    """Test the ``model_exists`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises``.
-    """
+    """Test the ``model_exists`` *Given* step handler. """
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Model exists")
@@ -523,14 +444,7 @@ class TestModelExists:
 
 
 class TestIsIntegrated:
-    """Test the ``is_integrated`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises`` in the body.
-    """
+    """Test the ``is_integrated`` *Given* step handler. """
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Is integrated")
@@ -540,8 +454,9 @@ class TestIsIntegrated:
     ) -> None:
         """Test ``is_integrated`` when the relation exists.
 
-        No assertion is needed: the step handler raises ``AssertionError`` if
-        the relation is missing. Reaching this point means the assertion passed.
+        Notes:
+            - No assertion is needed. The step handler raises ``AssertionError`` if
+              the integration is missing. Reaching this point means the assertion passed.
         """
 
     @staticmethod
@@ -550,11 +465,8 @@ class TestIsIntegrated:
         """Test ``is_integrated`` with the ``in model`` optional clause.
 
         Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising the optional is sufficient.
-
-        No assertion is needed: the step handler raises ``AssertionError`` if
-        the relation is missing. Reaching this point means the assertion passed.
+            - No assertion is needed. The step handler raises ``AssertionError`` if
+              the integration is missing. Reaching this point means the assertion passed.
         """
 
     def test_raises_when_not_integrated(
@@ -603,14 +515,7 @@ class TestIsIntegrated:
 
 
 class TestIsDeployed:
-    """Test the ``is_deployed`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises`` in the body.
-    """
+    """Test the ``is_deployed`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Is deployed")
@@ -621,8 +526,9 @@ class TestIsDeployed:
     ) -> None:
         """Test ``is_deployed`` with only the required clause.
 
-        No assertion is needed: the step handler raises ``AssertionError`` if
-        the app is not found. Reaching this point means the assertion passed.
+        Notes:
+            - No assertion is needed: the step handler raises ``AssertionError`` if
+              the app is not found. Reaching this point means the assertion passed.
         """
 
     @staticmethod
@@ -635,11 +541,8 @@ class TestIsDeployed:
         """Test ``is_deployed`` with the ``in model '{model}'`` optional clause.
 
         Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising the optional is sufficient.
-
-        No assertion is needed: the step handler raises ``AssertionError`` if
-        the app is not found. Reaching this point means the assertion passed.
+            - No assertion is needed. The step handler raises ``AssertionError`` if
+              the app is not found. Reaching this point means the assertion passed.
         """
 
     def test_raises_when_not_found(
@@ -675,14 +578,7 @@ class TestIsDeployed:
 
 
 class TestIsAppConfigSet:
-    """Test the ``is_app_config_set`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises``.
-    """
+    """Test the ``is_app_config_set`` *Given* step handler. """
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "App config is set")
@@ -690,9 +586,9 @@ class TestIsAppConfigSet:
         """Test ``is_app_config_set`` with only the required clause.
 
         Notes:
-            No assertion is needed: the step handler raises ``AssertionError`` if
-            the config value does not match. Reaching this point means the
-            assertion passed.
+            - No assertion is needed. The step handler raises ``AssertionError`` if
+              the config value does not match. Reaching this point means the
+              assertion passed.
         """
 
     @staticmethod
@@ -701,9 +597,9 @@ class TestIsAppConfigSet:
         """Test ``is_app_config_set`` with the ``in model`` optional clause.
 
         Notes:
-            No assertion is needed: the step handler raises ``AssertionError`` if
-            the config value does not match. Reaching this point means the
-            assertion passed.
+            - No assertion is needed. The step handler raises ``AssertionError`` if
+              the config value does not match. Reaching this point means the
+              assertion passed.
         """
 
     def test_raises_when_not_set(self, context: Context, mock_subprocess_run: MagicMock) -> None:
@@ -717,14 +613,7 @@ class TestIsAppConfigSet:
 
 
 class TestResetAppConfig:
-    """Test the ``reset_app_config`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises``.
-    """
+    """Test the ``reset_app_config`` *Given* step handler. """
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Reset app config")
@@ -741,12 +630,7 @@ class TestResetAppConfig:
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Reset app config in model")
     def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
-        """Test ``reset_app_config`` with the ``in model`` optional clause.
-
-        Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising the optional is sufficient.
-        """
+        """Test ``reset_app_config`` with the ``in model`` optional clause."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "config",
@@ -764,14 +648,7 @@ class TestResetAppConfig:
 
 
 class TestSetAppConfig:
-    """Test the ``set_app_config`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises``.
-    """
+    """Test the ``set_app_config`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Set app config")
@@ -787,12 +664,7 @@ class TestSetAppConfig:
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Set app config in model")
     def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
-        """Test ``set_app_config`` with the ``in model`` optional clause.
-
-        Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising the optional is sufficient.
-        """
+        """Test ``set_app_config`` with the ``in model`` optional clause. """
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "config",
@@ -809,15 +681,7 @@ class TestSetAppConfig:
 
 
 class TestSetModelConfig:
-    """Test the ``set_model_config`` *Given* step handler.
-
-    Notes:
-        Error paths and the ``cloudinit-userdata`` file-reading path are
-        tested by calling the handler directly rather than via ``@scenario``
-        because ``@scenario`` runs the Gherkin steps before the test body, so
-        exceptions raised during step execution cannot be caught with
-        ``pytest.raises``.
-    """
+    """Test the ``set_model_config`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Set model config")
@@ -893,14 +757,7 @@ class TestSetModelConfig:
 
 
 class TestResetModelConfig:
-    """Test the ``reset_model_config`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises``.
-    """
+    """Test the ``reset_model_config`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Reset model config")
@@ -928,14 +785,7 @@ class TestResetModelConfig:
 
 
 class TestSwitchModel:
-    """Test the ``switch_model`` *Given* step handler.
-
-    Notes:
-        Error paths are tested by calling the handler directly rather
-        than with ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises``.
-    """
+    """Test the ``switch_model`` *Given* step handler. """
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Switch model")

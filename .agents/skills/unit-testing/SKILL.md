@@ -168,20 +168,6 @@ Each step handler that uses the `flexible` parser should have at least two `@sce
 
 Do NOT write a separate test for each permutation of optional clauses. The `flexible` parser allows optional clauses to appear in any order, so a single test exercising all optionals is sufficient.
 
-Document this in the test's docstring:
-
-```python
-@staticmethod
-@scenario(FEATURE_FILE, "Deploy with all optionals")
-def test_with_optionals(...) -> None:
-    """Test ``deploy`` with all optional clauses.
-
-    Notes:
-        The ``flexible`` parser allows optional clauses to appear in any
-        order, so a single test exercising all optionals is sufficient.
-    """
-```
-
 ## Testing `parsers.re`-based handlers
 
 Some Then step handlers use `parsers.re` instead of `flexible`. These handlers use raw regular expressions with named capture groups and have no optional clauses. The Then step handlers using `parsers.re` are:
@@ -193,20 +179,13 @@ Each `parsers.re` handler with a `type_` capture group (app/unit) needs two `@sc
 
 ## Testing error paths
 
-Error paths are tested by calling the handler function directly (not via `@scenario`). Use `pytest.raises` to assert the expected exception. Add a `Notes:` section to the docstring explaining why `@scenario` is not used:
+Error paths are tested by calling the handler function directly (not via `@scenario`). Use `pytest.raises` to assert the expected exception:
 
 ```python
 def test_raises_when_env_var_missing(
     self, context: Context, monkeypatch: pytest.MonkeyPatch, ...
 ) -> None:
-    """``deploy_local`` raises when ``<APP>_CHARM_PATH`` is not set.
-
-    Notes:
-        This error path is tested by calling the handler directly rather
-        than via ``@scenario`` because ``@scenario`` runs the Gherkin steps
-        before the test body, so exceptions raised during step execution
-        cannot be caught with ``pytest.raises`` in the body.
-    """
+    """``deploy_local`` raises when ``<APP>_CHARM_PATH`` is not set. """
     monkeypatch.delenv("SLURMCTLD_CHARM_PATH", raising=False)
 
     with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):

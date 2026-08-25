@@ -82,12 +82,7 @@ class TestRunAction:
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "Run action on multiple units with params in model")
     def test_with_optionals(context: Context, mock_subprocess_run: MagicMock) -> None:
-        """Test ``run_action`` with all optional clauses.
-
-        Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising all optionals is sufficient.
-        """
+        """Test ``run_action`` with all optional clauses."""
         run_calls = [
             call
             for call in mock_subprocess_run.call_args_list
@@ -133,12 +128,7 @@ class TestRunExec:
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "Exec command on multiple units in model")
     def test_with_optionals(context: Context, mock_subprocess_run: MagicMock) -> None:
-        """Test ``run_exec`` with all optional clauses.
-
-        Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising all optionals is sufficient.
-        """
+        """Test ``run_exec`` with all optional clauses."""
         exec_calls = [
             call
             for call in mock_subprocess_run.call_args_list
@@ -159,14 +149,7 @@ class TestRunExec:
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "Exec command on two units without comma")
     def test_without_comma(context: Context, mock_subprocess_run: MagicMock) -> None:
-        """Test ``run_exec`` with comma-free ``and`` list syntax.
-
-        Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising the optional is sufficient.
-            This scenario also covers the ``'a' and 'b'`` (no comma) list
-            separator form.
-        """
+        """Test ``run_exec`` with comma-free ``and`` list syntax."""
         exec_calls = [
             call
             for call in mock_subprocess_run.call_args_list
@@ -216,12 +199,7 @@ class TestRunSSH:
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "SSH into unit and execute command in model")
     def test_with_optionals(context: Context, mock_subprocess_run: MagicMock) -> None:
-        """Test ``run_ssh`` with the optional ``in model`` clause.
-
-        Notes:
-            The ``flexible`` parser allows optional clauses to appear in any
-            order, so a single test exercising the optional is sufficient.
-        """
+        """Test ``run_ssh`` with the optional ``in model`` clause."""
         ssh_calls = [
             call
             for call in mock_subprocess_run.call_args_list
