@@ -186,7 +186,7 @@ def make_dict(value: str | None) -> dict[str, Any]:
     if value is None:
         return {}
 
-    matches = re.findall(r'(\w+)=("[^"]*"|\S+)', value)
+    matches = re.findall(r'([\w-]+)=("[^"]*"|\S+)', value)
     return {k: autocast(v.strip('"')) for k, v in matches}
 
 
