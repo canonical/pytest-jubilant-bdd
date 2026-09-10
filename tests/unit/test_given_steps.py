@@ -197,7 +197,7 @@ class TestAddUnit:
 
 
 class TestRemoveUnit:
-    """Test the ``remove_unit`` *Given* step handler. """
+    """Test the ``remove_unit`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove unit")
@@ -213,7 +213,7 @@ class TestRemoveUnit:
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove unit in model")
     def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
-        """Test ``remove_unit`` with all optional clauses. """
+        """Test ``remove_unit`` with all optional clauses."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "remove-unit",
@@ -332,6 +332,12 @@ class TestDeploy:
             "ubuntu@24.04",
             "--channel",
             "latest/edge",
+            "--constraints",
+            "virt-type=virtual-machine",
+            "--constraints",
+            "cores=4",
+            "--constraints",
+            "mem=5G",
             "--num-units",
             "3",
         ]
@@ -344,7 +350,7 @@ class TestDeployLocal:
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Deploy local")
     def test_required(mock_subprocess_run: MagicMock, fake_charm_file: str) -> None:
-        """Test ``deploy_local`` with only the required clause. """
+        """Test ``deploy_local`` with only the required clause."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "deploy",
@@ -365,6 +371,12 @@ class TestDeployLocal:
             "controller",
             "--base",
             "ubuntu@24.04",
+            "--constraints",
+            "virt-type=virtual-machine",
+            "--constraints",
+            "cores=4",
+            "--constraints",
+            "mem=5G",
             "--num-units",
             "3",
         ]
@@ -382,7 +394,7 @@ class TestDeployLocal:
             FileNotFoundError,
             match=f"Charm not found: environment variable '{slurmctld_charm_path}' is not set.",
         ):
-            deploy_local(context, "slurmctld", None, None, None, 1, None)
+            deploy_local(context, "slurmctld", None, None, None, 1, None, {})
 
     def test_raises_when_path_missing(self, context: Context) -> None:
         """``deploy_local`` raises when the supplied path is not a file."""
@@ -392,11 +404,11 @@ class TestDeployLocal:
             FileNotFoundError,
             match=f"Charm not found: '{nonexistent}' is not a file",
         ):
-            deploy_local(context, "slurmctld", nonexistent, None, None, 1, None)
+            deploy_local(context, "slurmctld", nonexistent, None, None, 1, None, {})
 
 
 class TestIntegrate:
-    """Test the ``integrate`` *Given* step handler. """
+    """Test the ``integrate`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Integrate")
@@ -429,7 +441,7 @@ class TestIntegrate:
 
 
 class TestModelExists:
-    """Test the ``model_exists`` *Given* step handler. """
+    """Test the ``model_exists`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Model exists")
@@ -444,7 +456,7 @@ class TestModelExists:
 
 
 class TestIsIntegrated:
-    """Test the ``is_integrated`` *Given* step handler. """
+    """Test the ``is_integrated`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Is integrated")
@@ -578,7 +590,7 @@ class TestIsDeployed:
 
 
 class TestIsAppConfigSet:
-    """Test the ``is_app_config_set`` *Given* step handler. """
+    """Test the ``is_app_config_set`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "App config is set")
@@ -613,7 +625,7 @@ class TestIsAppConfigSet:
 
 
 class TestResetAppConfig:
-    """Test the ``reset_app_config`` *Given* step handler. """
+    """Test the ``reset_app_config`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Reset app config")
@@ -664,7 +676,7 @@ class TestSetAppConfig:
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Set app config in model")
     def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
-        """Test ``set_app_config`` with the ``in model`` optional clause. """
+        """Test ``set_app_config`` with the ``in model`` optional clause."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "config",
@@ -785,7 +797,7 @@ class TestResetModelConfig:
 
 
 class TestSwitchModel:
-    """Test the ``switch_model`` *Given* step handler. """
+    """Test the ``switch_model`` *Given* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_GIVEN_STEP_TESTS, "Switch model")

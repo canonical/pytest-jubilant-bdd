@@ -173,9 +173,13 @@ def pack_charm(context: Context, app: str, project_dir: str | None) -> None:
         "[from channel '{channel}'] "
         "[on base '{base}'] "
         "[with '{num_units}' %units?%] "
-        "[with name '{name}'] " + OPTIONAL_MODEL_CLAUSE
+        "[with name '{name}'] "
+        "[with %constraints?% '{constraints}'] " + OPTIONAL_MODEL_CLAUSE
     ),
-    converters={"num_units": lambda v: int(v) if v is not None else 1},
+    converters={
+        "num_units": lambda v: int(v) if v is not None else 1,
+        "constraints": make_dict,
+    },
 )
 def deploy(
     context: Context,
@@ -185,6 +189,7 @@ def deploy(
     base: str | None,
     num_units: int,
     name: str | None,
+    constraints: Mapping[str, Any],
 ) -> None:
     """Deploy an application from Charmhub."""
     _deploy(
@@ -195,6 +200,7 @@ def deploy(
         base=base,
         num_units=num_units,
         name=name,
+        constraints=constraints,
     )
 
 
@@ -204,11 +210,13 @@ def deploy(
         "[located at '{path}'] "
         "[on base '{base}'] "
         "[with '{num_units}' %units?%] "
-        "[with name '{name}'] " + OPTIONAL_MODEL_CLAUSE
+        "[with name '{name}'] "
+        "[with %constraints?% '{constraints}'] " + OPTIONAL_MODEL_CLAUSE
     ),
     converters={
         "path": lambda v: Path(v) if v is not None else v,
         "num_units": lambda v: int(v) if v is not None else 1,
+        "constraints": make_dict,
     },
 )
 def deploy_local(
@@ -219,10 +227,11 @@ def deploy_local(
     base: str | None,
     num_units: int,
     name: str | None,
+    constraints: Mapping[str, Any],
 ) -> None:
     """Deploy an application from a local ``*.charm`` file."""
     if path is None:
-        # Attempt to resolve the local charm path from an environment variable
+        # Allow the charm path to be resolved from an environment variable
         # if "located at '{path}'" isn't provided in the Gherkin step.
         env_var = app.upper().replace("-", "_") + "_CHARM_PATH"
         try:
@@ -246,6 +255,7 @@ def deploy_local(
         base=base,
         num_units=num_units,
         name=name,
+        constraints=constraints,
     )
 
 
@@ -260,11 +270,19 @@ def _deploy(
     base: str | None = None,
     name: str | None = None,
     num_units: int = 1,
+    constraints: Mapping[str, Any] | None = None,
 ) -> None:
     """Deploy an application."""
     juju = context.get_juju(model)
 
-    juju.deploy(charm, name or app, base=base, channel=channel, num_units=num_units)
+    juju.deploy(
+        charm,
+        name or app,
+        base=base,
+        channel=channel,
+        num_units=num_units,
+        constraints=constraints,
+    )
 
 
 @given(flexible("I integrate '{app_one}' with '{app_two}' " + OPTIONAL_MODEL_CLAUSE))

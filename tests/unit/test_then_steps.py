@@ -121,7 +121,7 @@ class TestAssertAllAgentStatus:
         mock_status_json: None,
         mocker: MockerFixture,
     ) -> None:
-        """``assert_all_agent_status`` times out when the agent status is not ``'idle'``. """
+        """``assert_all_agent_status`` times out when the agent status is not ``'idle'``."""
         context.models.add("test")
         mocker.patch("time.monotonic", side_effect=[0.0, 999.0])
 
