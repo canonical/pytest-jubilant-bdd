@@ -54,6 +54,15 @@ Examples:
     >>> "%(?P<units>'[^']+')%"  # Does not match.
 """
 
+_CONJUNCTION_REGEX = r"(?:\s*,?\s*(?:and\s+)?)?"
+"""Regular expression that matches the separator joining optional clauses.
+
+Matches any combination of surrounding whitespace, an optional comma, and an
+optional ``and`` keyword (for example ``' '``, ``', '``, ``' and '``, or
+``', and '``). Prepended to every optional clause regex so optional clauses
+can be joined with natural conjunctions in any order.
+"""
+
 _REPLACE_BRACES_REGEX = re.compile(r"%.*?%|\{(\w+)}")
 """Regular expression that replaces braces (``{`` and ``}``) in a Gherkin step template.
 
@@ -77,9 +86,14 @@ Used to strip percent signs before assembling the final regex for matching Gherk
 class flexible(StepParser):  # noqa N802
     """``pytest-bdd`` parser with optional, reorderable clauses encapsulated in brackets.
 
+    Optional clauses can be omitted, reordered, and joined with natural
+    conjunctions (whitespace, ``and``, a comma, or a combination such as
+    ``, and``).
+
     Examples:
         >>> flexible("I deploy '{app}' [from channel '{channel}'] [with base '{base}']")
         ... # {app: str, channel: str | None, base: str | None}
+        >>> # "I deploy 'slurmctld' from channel 'latest/edge' and on base 'ubuntu@24.04'"
     """
 
     def __init__(self, pattern: str) -> None:
@@ -135,7 +149,10 @@ class flexible(StepParser):  # noqa N802
             pattern: ``pytest-bdd`` step pattern to compile into regular expressions.
         """
         optional_text = [match for match in _FIND_OPTIONAL_REGEX.findall(pattern) if match]
-        optional_regexes = [re.compile(self._build_regex(optional)) for optional in optional_text]
+        optional_regexes = [
+            re.compile(_CONJUNCTION_REGEX + self._build_regex(optional))
+            for optional in optional_text
+        ]
 
         # The lambda checks if group 1 matched ([] block), then replace with nothing "".
         # If group 1 didn't match, that means group 0 (% block) matched, so return it untouched.

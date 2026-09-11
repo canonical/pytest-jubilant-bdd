@@ -108,6 +108,13 @@ Gherkin steps matching this pattern could be:
 
 The order of optional clauses in the Gherkin step does not matter. The parser matches them in any order.
 
+Optional clauses may also be joined with natural conjunctions — whitespace, `and`, a comma, or a combination like `, and`:
+
+- `I deploy 'slurmctld' from channel 'latest/edge' and on base 'ubuntu@24.04'`
+- `I deploy 'slurmctld' from channel 'latest/edge', on base 'ubuntu@24.04', and in model 'test'`
+
+The conjunction is consumed by the clause that follows it, so clauses remain reorderable. A dangling conjunction (e.g. a trailing `and` with no clause after it) is rejected.
+
 ### Converters
 
 `{name}` placeholders always produce strings. Use the `converters` dict to cast them. **Every converter must handle `None`** because optional clauses return `None` for placeholders inside them when the clause is absent:
@@ -128,7 +135,7 @@ Built-in converters in `_parsers.py`:
 
 ### Testing implications
 
-Because optional clauses can appear in any order, a **single "all optionals" test is sufficient** — do not write a test for every permutation. Document this in the test's `Notes:` block.
+Because optional clauses can appear in any order, a **single "all optionals" test is sufficient** — do not write a test for every permutation. The same applies to conjunction styles (`and`, `,`, `, and`): exercise them together in one scenario rather than in separate tests. Document this in the test's `Notes:` block.
 
 ## The `%…%` block syntax
 
