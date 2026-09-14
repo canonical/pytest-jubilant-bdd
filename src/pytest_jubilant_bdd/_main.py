@@ -118,6 +118,44 @@ def add_unit(context: Context, num_units: int, app: str, model: str | None) -> N
 
 @given(
     flexible(
+        r"%I add (?:'(?P<num_machines>\d+)' |a )machines?%"
+        "[to '{target}'] "
+        "[%(?:that )?uses?% base '{base}'] "
+        "[with constraints '{constraints}'] "
+        "[with disks '{disks}'] " + OPTIONAL_MODEL_CLAUSE
+    ),
+    converters={
+        "num_machines": lambda v: int(v) if v is not None else 1,
+        "constraints": make_dict,
+    },
+)
+def add_machine(
+    context: Context,
+    num_machines: int = 1,
+    target: str | None = None,
+    base: str | None = None,
+    constraints: Mapping[str, Any] | None = None,
+    disks: str | None = None,
+    model: str | None = None,
+) -> None:
+    """Add one or more machines to a Juju model.
+
+    Notes:
+        - This step handler cannot be used with Kubernetes clouds.
+    """
+    juju = context.get_juju(model)
+
+    juju.add_machine(
+        target,
+        base=base,
+        constraints=constraints or None,
+        disks=disks,
+        num_machines=num_machines,
+    )
+
+
+@given(
+    flexible(
         r"I remove %units? (?P<units>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
         + OPTIONAL_MODEL_CLAUSE
     ),

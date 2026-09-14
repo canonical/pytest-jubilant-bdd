@@ -15,6 +15,8 @@ behavior of your charms instead of the boilerplate of driving the Juju
 lifecycle from your tests. Current reusable steps shipped in the
 pytest-jubilant-bdd package include:
 
+* `add_machine`: A `given` step handler for adding one or more machines to a
+  Juju model.
 * `add_model`: A `given` step handler for adding a new Juju model to the
   testing context.
 * `add_unit`: A `given` step handler for adding units to a deployed

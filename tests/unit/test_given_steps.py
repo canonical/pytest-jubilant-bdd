@@ -31,6 +31,7 @@ from pytest_jubilant_bdd import Context
 
 # ruff: disable[SLF001]
 from pytest_jubilant_bdd._main import (
+    add_machine,
     add_unit,
     deploy_local,
     integrate,
@@ -194,6 +195,46 @@ class TestAddUnit:
         """``add_unit`` raises when the model is not in the context."""
         with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
             add_unit(context, 3, "slurmctld", "nonexistent")
+
+
+class TestAddMachine:
+    """Test the ``add_machine`` *Given* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Add machine")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``add_machine`` with the singular ``a`` article form."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "add-machine",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Add machine with all optionals")
+    def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
+        """Test ``add_machine`` with the counted form and all optional clauses."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "add-machine",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "lxd:25",
+            "--base",
+            "ubuntu@24.04",
+            "--constraints",
+            "mem=8G",
+            "--constraints",
+            "cores=4",
+            "--disks",
+            "ebs,1T,2",
+            "-n",
+            "2",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``add_machine`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            add_machine(context, model="nonexistent")
 
 
 class TestRemoveUnit:

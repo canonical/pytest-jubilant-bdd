@@ -57,6 +57,13 @@ Feature: Reusable `given` steps
     Given I add model 'test'
     Given I add '2' units to app 'slurmctld' in model 'test'
 
+  Scenario: Add machine
+    Given I add a machine
+
+  Scenario: Add machine with all optionals
+    Given I add model 'test'
+    Given I add '2' machines to 'lxd:25' in model 'test' that use base 'ubuntu@24.04' with constraints 'mem=8G cores=4' and with disks 'ebs,1T,2'
+
   Scenario: Remove unit
     Given I remove unit 'slurmctld/0'
 
