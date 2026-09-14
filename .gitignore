@@ -13,3 +13,6 @@ cover/
 
 # IDE-specific files
 .idea
+
+# Development tool configuration
+.workshop.lock
