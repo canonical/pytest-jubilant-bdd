@@ -55,11 +55,14 @@ pytest-jubilant-bdd package include:
 * `run_ssh`: A `when` step handler for SSHing into a machine or unit and
   executing a command.
 * `assert_all_agent_status`: A `then` step handler for asserting the status
-  of all agents in one or more models.
+  of all agents in one or more models, with an optional `within '{timeout}'
+  seconds` clause to override the global `--juju-bdd-wait-timeout`.
 * `assert_workload_status`: A `then` step handler for asserting the workload
-  status of a deployed application.
+  status of a deployed application, with an optional `within '{timeout}'
+  seconds` clause to override the global `--juju-bdd-wait-timeout`.
 * `assert_workload_status_message`: A `then` step handler for asserting the
-  message attached to a workload status.
+  message attached to a workload status, with an optional `within '{timeout}'
+  seconds` clause to override the global `--juju-bdd-wait-timeout`.
 
 For more information on how to use or contribute to pytest-jubilant-bdd,
 check out the [Development](#-development) section below 👇

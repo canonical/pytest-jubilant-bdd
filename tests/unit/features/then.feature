@@ -15,14 +15,30 @@ Feature: Reusable `then` steps
     Given I add model 'ldap'
     Then all agents are 'idle' in models 'sssd' and 'ldap'
 
+  Scenario: All agents idle with all optionals
+    Given I add model 'compute'
+    Then all agents are 'idle' in models 'test', 'compute' within '90' seconds
+
   Scenario: Workload status for app
     Then the workload status for app 'slurmctld' is 'active'
 
   Scenario: Workload status for unit
     Then the workload status for unit 'slurmctld/0' is 'active'
 
+  Scenario: Workload status for app with all optionals
+    Then the workload status for app 'slurmctld' is 'active' within '90' seconds
+
+  Scenario: Workload status for unit with all optionals
+    Then the workload status for unit 'slurmctld/0' is 'active' within '90' seconds
+
   Scenario: Workload status message for app
     Then the workload status message for app 'slurmctld' is 'ready'
 
   Scenario: Workload status message for unit
     Then the workload status message for unit 'slurmctld/0' is 'installing agent'
+
+  Scenario: Workload status message for app with all optionals
+    Then the workload status message for app 'slurmctld' is 'ready' within '90' seconds
+
+  Scenario: Workload status message for unit with all optionals
+    Then the workload status message for unit 'slurmctld/0' is 'installing agent' within '90' seconds

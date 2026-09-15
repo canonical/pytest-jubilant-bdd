@@ -154,6 +154,8 @@ Some `flexible` parser patterns use `%...%` blocks to embed raw regular expressi
 | `run_action` | `%units? (?P<units>(?:'([^']+)'(?:, (?:and )?\|and )?)+)%` |
 | `run_exec` | `%(?P<type_>machines?\|units?) (?P<targets>(?:'([^']+)'(?:, (?:and )?\|and )?)+)%` |
 | `assert_all_agent_status` | `%'(?P<status>{'\|'.join(AGENT_STATUSES)})'%` (for `AgentStatus`) and `%(?P<models>...)` for model list |
+| `assert_workload_status` | `%the workload status for (?P<type_>app\|unit) '(?P<target>[^']+)'%` and `%'(?P<status>{'\|'.join(WORKLOAD_STATUSES)})'%` |
+| `assert_workload_status_message` | `%the workload status message for (?P<type_>app\|unit) '(?P<target>[^']+)'%` and `%'(?P<message>[^']*)'%` |
 
 **Important**: The `_compile` method in `_parsers.py` strips trailing whitespace after `%` blocks to prevent the required regex from demanding a trailing space when a step is used without optional clauses. When writing patterns in `_main.py`, do NOT add trailing spaces after `%` blocks — the parser handles this automatically.
 
@@ -168,14 +170,9 @@ Each step handler that uses the `flexible` parser should have at least two `@sce
 
 Do NOT write a separate test for each permutation of optional clauses. The `flexible` parser allows optional clauses to appear in any order, so a single test exercising all optionals is sufficient.
 
-## Testing `parsers.re`-based handlers
+## Testing handlers that branch on a capture group
 
-Some Then step handlers use `parsers.re` instead of `flexible`. These handlers use raw regular expressions with named capture groups and have no optional clauses. The Then step handlers using `parsers.re` are:
-
-- `assert_workload_status` — Pattern: `the workload status for (?P<type_>app|unit) '(?P<target>[^']+)' is '...'`
-- `assert_workload_status_message` — Pattern: `the workload status message for (?P<type_>app|unit) '(?P<target>[^']+)' is '(?P<message>[^']*)'`
-
-Each `parsers.re` handler with a `type_` capture group (app/unit) needs two `@scenario` tests: one for `app` and one for `unit`. These tests exercise different code paths in the handler's `match` statement. The `then.feature` file already contains scenarios for both variants, but the corresponding unit tests have not yet been implemented.
+`assert_workload_status` and `assert_workload_status_message` use the `flexible` parser with `%...%` blocks (they migrated from `parsers.re` to support the optional `within '{timeout}' seconds` clause). Handlers with a `type_` capture group (app/unit) need two `@scenario` tests: one for `app` and one for `unit`. These tests exercise different code paths in the handler's `match` statement.
 
 ## Testing error paths
 
@@ -248,6 +245,17 @@ with pytest.raises(TimeoutError, match="Wait timed out"):
 ```
 
 The `side_effect` list must return `0.0` first (for `start_time`), then values exceeding the timeout for subsequent calls.
+
+To verify that a custom `within '{timeout}' seconds` value reaches `Context.wait`, use the fact that the `TimeoutError` message embeds the effective timeout:
+
+```python
+mocker.patch("time.monotonic", side_effect=[0.0, 999.0])
+
+with pytest.raises(TimeoutError, match="after 90"):
+    assert_workload_status(context, "app", "slurmctld", "maintenance", timeout=90.0)
+```
+
+If the handler ignored the custom timeout, the message would read `after 180.0s` (the global default) and the match would fail.
 
 ## Testing `juju run` / `juju exec`-based handlers
 

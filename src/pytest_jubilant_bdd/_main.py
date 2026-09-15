@@ -33,6 +33,7 @@ from ._constants import (
     DEFAULT_WAIT_TIMEOUT,
     NO_TEARDOWN_FLAG_NAME,
     OPTIONAL_MODEL_CLAUSE,
+    OPTIONAL_TIMEOUT_CLAUSE,
     WAIT_TIMEOUT_FLAG_NAME,
     WORKLOAD_STATUS_CAPTURE_GROUP,
     AgentStatus,
@@ -554,64 +555,91 @@ def run_ssh(
 @then(
     flexible(
         rf"all agents are %'{AGENT_STATUS_CAPTURE_GROUP}'% "
-        r"[in %models? (?P<models>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%]"
+        r"[in %models? (?P<models>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%] "
+        + OPTIONAL_TIMEOUT_CLAUSE
     ),
-    converters={"models": make_list},
+    converters={
+        "models": make_list,
+        "timeout": lambda v: float(v) if v is not None else None,
+    },
 )
-def assert_all_agent_status(context: Context, status: AgentStatus, models: list[str]) -> None:
+def assert_all_agent_status(
+    context: Context, status: AgentStatus, models: list[str], timeout: float | None = None
+) -> None:
     """Assert the status for all agents.
 
     If no model names are provided, then the status of all agents in the current testing context
     will be validated.
+
+    Notes:
+        - If a timeout is provided, it overrides the global ``--juju-bdd-wait-timeout`` 
+          for this step.
     """
     context.wait(
-        ready=lambda ctx: assertions.model.all_agent_statuses_are(ctx, *models, expected=status)
+        ready=lambda ctx: assertions.model.all_agent_statuses_are(ctx, *models, expected=status),
+        timeout=timeout,
     )
 
 
 @then(
-    parsers.re(
-        r"the workload status for (?P<type_>app|unit) '(?P<target>[^']+)' "
-        rf"is '{WORKLOAD_STATUS_CAPTURE_GROUP}'"
-    )
+    flexible(
+        r"%the workload status for (?P<type_>app|unit) '(?P<target>[^']+)'%"
+        rf" is %'{WORKLOAD_STATUS_CAPTURE_GROUP}'% " + OPTIONAL_TIMEOUT_CLAUSE
+    ),
+    converters={"timeout": lambda v: float(v) if v is not None else None},
 )
 def assert_workload_status(
-    context: Context, type_: str, target: str, status: WorkloadStatus
+    context: Context, type_: str, target: str, status: WorkloadStatus, timeout: float | None = None
 ) -> None:
-    """Assert the workload status of an application or unit."""
+    """Assert the workload status of an application or unit.
+
+    Notes:
+        - If a timeout is provided, it overrides the global ``--juju-bdd-wait-timeout``
+          for this step.
+    """
     match type_:
         case "app":
             context.wait(
                 ready=lambda ctx: assertions.app.all_unit_statuses_are(
                     ctx, target, expected=status
-                )
+                ),
+                timeout=timeout,
             )
         case "unit":
             context.wait(
-                ready=lambda ctx: assertions.unit.all_statuses_are(ctx, target, expected=status)
+                ready=lambda ctx: assertions.unit.all_statuses_are(ctx, target, expected=status),
+                timeout=timeout,
             )
 
 
 @then(
-    parsers.re(
-        r"the workload status message for (?P<type_>app|unit) '(?P<target>[^']+)' "
-        r"is '(?P<message>[^']*)'"
-    )
+    flexible(
+        r"%the workload status message for (?P<type_>app|unit) '(?P<target>[^']+)'%"
+        r" is %'(?P<message>[^']*)'% " + OPTIONAL_TIMEOUT_CLAUSE
+    ),
+    converters={"timeout": lambda v: float(v) if v is not None else None},
 )
 def assert_workload_status_message(
-    context: Context, type_: str, target: str, message: str
+    context: Context, type_: str, target: str, message: str, timeout: float | None = None
 ) -> None:
-    """Assert the workload status of an application or unit."""
+    """Assert the workload status message of an application or unit.
+
+    Notes:
+        - If a timeout is provided, it overrides the global ``--juju-bdd-wait-timeout`` 
+          for this step.
+    """
     match type_:
         case "app":
             context.wait(
                 ready=lambda ctx: assertions.app.all_unit_status_messages_are(
                     ctx, target, expected=message
-                )
+                ),
+                timeout=timeout,
             )
         case "unit":
             context.wait(
                 ready=lambda ctx: assertions.unit.all_status_messages_are(
                     ctx, target, expected=message
-                )
+                ),
+                timeout=timeout,
             )

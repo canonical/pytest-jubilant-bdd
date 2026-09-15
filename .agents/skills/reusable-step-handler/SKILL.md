@@ -28,7 +28,7 @@ The handler's step pattern determines which parser to use. Three options exist:
 |--------|--------------|-------------|
 | `parsers.parse` | `@given(parsers.parse("I add model '{model}'"))` | Single-line, all required, no reordering |
 | `flexible` | `@given(flexible("I deploy '{app}' [in model '{model}']"))` | Optional and/or reorderable clauses |
-| `parsers.re` | `@then(parsers.re(r"the workload status for (?P<type_>app\|unit) …"))` | Raw regex; branching on a capture group |
+| `parsers.re` | `@then(parsers.re(r"…"))` | Raw regex; branching on a capture group, **no** optional clauses |
 
 ## Decision: which parser to use
 
@@ -71,22 +71,7 @@ Rules for `flexible` handlers are covered in § 3.
 
 ### parsers.re
 
-Use only when the step needs branching on a capture group — that is, when the value of a capture determines which code path the handler takes:
-
-```python
-@then(
-    parsers.re(
-        r"the workload status for (?P<type_>app|unit) '(?P<target>[^']+)' "
-        rf"is '{WORKLOAD_STATUS_CAPTURE_GROUP}'"
-    )
-)
-def assert_workload_status(context, type_, target, status):
-    match type_:
-        case "app":
-            ...
-        case "unit":
-            ...
-```
+Use only when the step needs branching on a capture group — that is, when the value of a capture determines which code path the handler takes — **and** the step has no optional clauses.
 
 `parsers.re` handlers have no optional clauses and no `%…%` blocks. Every capture group is a named group `(?P<name>…)` in a single raw regex.
 
@@ -150,6 +135,10 @@ Use `%…%` when a clause needs regex features that `{name}` placeholders cannot
 - **Quantifiers** on the parenthesized pattern (e.g. `(?:…)+`).
 - **Alternation** inside a capture group (e.g. `machines?|units?`).
 - **Enum-like capture** from a constant (e.g. `{'|'.join(AGENT_STATUSES)}`).
+- **Regex bracket expressions** (e.g. `[^']+`): `_FIND_OPTIONAL_REGEX` in
+  `_parsers.py` scans for `[...]` outside `%…%` blocks, so a bare character
+  class would be misparsed as an optional clause and corrupt the compiled
+  pattern. Always wrap bracket expressions in `%…%`.
 
 ### Contrast with `{name}` placeholders
 
@@ -196,6 +185,8 @@ Read these in `_main.py` as canonical examples:
 - `run_action` — `%units? (?P<units>(?:'([^']+)'(?:, (?:and )?|and )?)+)%` — optional-units list with Oxford-comma support.
 - `run_exec` — `%(?P<type_>machines?|units?) (?P<targets>(?:'([^']+)'(?:, (?:and )?|and )?)+)%` — unit/machine alternation + targets list.
 - `assert_all_agent_status` — `%'(?P<status>{'|'.join(AGENT_STATUSES)})'%` — enum-backed capture generated from `AGENT_STATUSES` constant, paired with `%(?P<models>…)` for a models list.
+- `assert_workload_status` — `%the workload status for (?P<type_>app|unit) '(?P<target>[^']+)'%` and `%'(?P<status>{'|'.join(WORKLOAD_STATUSES)})'%` — alternation and bracket expressions, paired with the optional `OPTIONAL_TIMEOUT_CLAUSE`.
+- `assert_workload_status_message` — same shape as `assert_workload_status` with `%'(?P<message>[^']*)'%` for the message capture.
 
 ## Base-function / private-helper pattern
 
@@ -340,20 +331,29 @@ def _reset_stacks(context: Context) -> None:
 Then-step handlers use `context.wait()` to poll a readiness condition until the assertion passes three times consecutively:
 
 ```python
-@then(parsers.re(r"the workload status for (?P<type_>app|unit) …"))
-def assert_workload_status(context, type_, target, status):
+@then(
+    flexible(
+        r"%the workload status for (?P<type_>app|unit) '(?P<target>[^']+)'%"
+        rf" is %'{WORKLOAD_STATUS_CAPTURE_GROUP}'% "
+        + OPTIONAL_TIMEOUT_CLAUSE
+    ),
+    converters={"timeout": lambda v: float(v) if v is not None else None},
+)
+def assert_workload_status(context, type_, target, status, timeout):
     match type_:
         case "app":
             context.wait(
                 ready=lambda ctx: assertions.app.all_unit_statuses_are(
                     ctx, target, expected=status
-                )
+                ),
+                timeout=timeout,
             )
         case "unit":
             context.wait(
                 ready=lambda ctx: assertions.unit.all_statuses_are(
                     ctx, target, expected=status
-                )
+                ),
+                timeout=timeout,
             )
 ```
 
@@ -362,6 +362,7 @@ Key details:
 - The `ready` lambda receives the `Context` object — use the `ctx` parameter, not the outer `context`.
 - `wait` polls the lambda until it returns `True` three times in a row, then returns.
 - On timeout, `wait` raises `TimeoutError` ("Wait timed out") — do **not** catch this; let pytest surface it.
+- Handlers with the optional `within '{timeout}' seconds` clause (from `OPTIONAL_TIMEOUT_CLAUSE`) pass the parsed timeout to `context.wait(timeout=…)`. When the clause is absent, `timeout=None` and `wait` falls back to the global `--juju-bdd-wait-timeout`.
 - Assertion helpers live in `src/pytest_jubilant_bdd/_assertions.py`. The three namespaces are `assertions.app`, `assertions.model`, and `assertions.unit`.
 
 Reference handlers: `assert_workload_status`, `assert_workload_status_message`, `assert_all_agent_status`.
@@ -398,9 +399,9 @@ Scenario: Deploy with all optionals
 
 Exercise every optional clause in a single scenario. Order them for readability; the `flexible` parser matches them in any order. Do **not** write a separate scenario for each optional clause or for each permutation of clauses.
 
-### New scenarios for `parsers.re` handlers
+### New scenarios for branching handlers
 
-Handlers using `parsers.re` with a `type_` capture group (e.g. `assert_workload_status`) need **two** scenarios: one for `app` and one for `unit`. These exercise different code paths in the handler's `match` statement.
+Handlers with a `type_` capture group (e.g. `assert_workload_status`, whether `parsers.re` or `flexible` with `%…%` blocks) need **two** scenarios: one for `app` and one for `unit`. These exercise different code paths in the handler's `match` statement.
 
 ## Cross-reference: unit tests
 

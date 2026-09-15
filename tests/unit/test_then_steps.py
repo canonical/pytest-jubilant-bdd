@@ -96,7 +96,7 @@ class TestAssertAllAgentStatus:
 
     @staticmethod
     @scenario(REUSABLE_THEN_STEP_TESTS, "All agents idle in multiple models")
-    def test_with_optionals(mock_subprocess_run: MagicMock, mock_status_json: None) -> None:
+    def test_with_multiple_models(mock_subprocess_run: MagicMock, mock_status_json: None) -> None:
         """Test ``assert_all_agent_status`` with the ``in models`` optional clause.
 
         Notes:
@@ -113,6 +113,30 @@ class TestAssertAllAgentStatus:
             - No assertion is needed. The handler raises ``TimeoutError`` if the
               assertion fails. Reaching this point means the assertion passed.
         """
+
+    @staticmethod
+    @scenario(REUSABLE_THEN_STEP_TESTS, "All agents idle with all optionals")
+    def test_with_optionals(mock_subprocess_run: MagicMock, mock_status_json: None) -> None:
+        """Test ``assert_all_agent_status`` with all optional clauses.
+
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
+        """
+
+    def test_custom_timeout_is_passed_to_wait(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        mock_status_json: None,
+        mocker: MockerFixture,
+    ) -> None:
+        """A custom ``within '{timeout}' seconds`` value overrides the global wait timeout."""
+        context.models.add("test")
+        mocker.patch("time.monotonic", side_effect=[0.0, 999.0])
+
+        with pytest.raises(TimeoutError, match="after 90"):
+            assert_all_agent_status(context, "lost", [], timeout=90.0)
 
     def test_raises_when_agent_not_idle(
         self,
@@ -134,8 +158,8 @@ class TestAssertWorkloadStatus:
 
     @staticmethod
     @scenario(REUSABLE_THEN_STEP_TESTS, "Workload status for app")
-    def test_for_app(mock_subprocess_run: MagicMock, mock_status_json: None) -> None:
-        """Test ``assert_workload_status`` for an application.
+    def test_required(mock_subprocess_run: MagicMock, mock_status_json: None) -> None:
+        """Test ``assert_workload_status`` with only the required clause.
 
         Notes:
             - No assertion is needed. The handler raises ``TimeoutError`` if the
@@ -151,6 +175,42 @@ class TestAssertWorkloadStatus:
             - No assertion is needed. The handler raises ``TimeoutError`` if the
         assertion fails. Reaching this point means the assertion passed.
         """
+
+    @staticmethod
+    @scenario(REUSABLE_THEN_STEP_TESTS, "Workload status for app with all optionals")
+    def test_with_optionals(mock_subprocess_run: MagicMock, mock_status_json: None) -> None:
+        """Test ``assert_workload_status`` with all optional clauses.
+
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
+        """
+
+    @staticmethod
+    @scenario(REUSABLE_THEN_STEP_TESTS, "Workload status for unit with all optionals")
+    def test_for_unit_with_optionals(
+        mock_subprocess_run: MagicMock, mock_status_json: None
+    ) -> None:
+        """Test ``assert_workload_status`` for a unit with all optional clauses.
+
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
+        """
+
+    def test_custom_timeout_is_passed_to_wait(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        mock_status_json: None,
+        mocker: MockerFixture,
+    ) -> None:
+        """A custom ``within '{timeout}' seconds`` value overrides the global wait timeout."""
+        context.models.add("test")
+        mocker.patch("time.monotonic", side_effect=[0.0, 999.0])
+
+        with pytest.raises(TimeoutError, match="after 90"):
+            assert_workload_status(context, "app", "slurmctld", "maintenance", timeout=90.0)
 
     def test_raises_when_status_not_match_app(
         self,
@@ -186,8 +246,8 @@ class TestAssertWorkloadStatusMessage:
 
     @staticmethod
     @scenario(REUSABLE_THEN_STEP_TESTS, "Workload status message for app")
-    def test_for_app(mock_subprocess_run: MagicMock, _mock_status_message_ready: None) -> None:
-        """Test ``assert_workload_status_message`` for an application.
+    def test_required(mock_subprocess_run: MagicMock, _mock_status_message_ready: None) -> None:
+        """Test ``assert_workload_status_message`` with only the required clause.
 
         Notes:
             - No assertion is needed. The handler raises ``TimeoutError`` if the
@@ -206,6 +266,46 @@ class TestAssertWorkloadStatusMessage:
             - No assertion is needed. The handler raises ``TimeoutError`` if the
               assertion fails. Reaching this point means the assertion passed.
         """
+
+    @staticmethod
+    @scenario(REUSABLE_THEN_STEP_TESTS, "Workload status message for app with all optionals")
+    def test_with_optionals(
+        mock_subprocess_run: MagicMock,
+        _mock_status_message_ready: None,
+    ) -> None:
+        """Test ``assert_workload_status_message`` with all optional clauses.
+
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
+        """
+
+    @staticmethod
+    @scenario(REUSABLE_THEN_STEP_TESTS, "Workload status message for unit with all optionals")
+    def test_for_unit_with_optionals(
+        mock_subprocess_run: MagicMock,
+        _mock_status_message_installing: None,
+    ) -> None:
+        """Test ``assert_workload_status_message`` for a unit with all optional clauses.
+
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
+        """
+
+    def test_custom_timeout_is_passed_to_wait(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        mock_status_json: None,
+        mocker: MockerFixture,
+    ) -> None:
+        """A custom ``within '{timeout}' seconds`` value overrides the global wait timeout."""
+        context.models.add("test")
+        mocker.patch("time.monotonic", side_effect=[0.0, 999.0])
+
+        with pytest.raises(TimeoutError, match="after 90"):
+            assert_workload_status_message(context, "app", "slurmctld", "wrong", timeout=90.0)
 
     def test_raises_when_message_not_match_app(
         self,
