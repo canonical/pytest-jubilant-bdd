@@ -64,12 +64,26 @@ Feature: Reusable `given` steps
     Given I add model 'test'
     Given I add '2' machines to 'lxd:25' in model 'test' that use base 'ubuntu@24.04' with constraints 'mem=8G cores=4' and with disks 'ebs,1T,2'
 
+  Scenario: Add storage
+    Given I add storage 'ost' to unit 'lustre-server/1'
+
+  Scenario: Add storage with all optionals
+    Given I add model 'test'
+    Given I add storage 'ost' to unit 'lustre-server/1' from pool 'loop' of size '1G' with '3' instances in model 'test'
+
   Scenario: Remove unit
     Given I remove unit 'slurmctld/0'
 
   Scenario: Remove unit in model
     Given I add model 'test'
     And I remove units 'slurmctld/0', 'slurmctld/1', and 'slurmctld/2' in model 'test'
+
+  Scenario: Remove storage
+    Given I remove storage 'ost/0'
+
+  Scenario: Remove storage in model
+    Given I add model 'test'
+    And I remove storage 'ost/0', 'ost/1', and 'ost/2' in model 'test'
 
   Scenario: Set app config
     Given I add model 'test'

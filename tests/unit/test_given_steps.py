@@ -32,6 +32,7 @@ from pytest_jubilant_bdd import Context
 # ruff: disable[SLF001]
 from pytest_jubilant_bdd._main import (
     add_machine,
+    add_storage,
     add_unit,
     deploy_local,
     integrate,
@@ -40,6 +41,7 @@ from pytest_jubilant_bdd._main import (
     is_integrated,
     model_exists,
     pack_charm,
+    remove_storage,
     remove_unit,
     reset_app_config,
     reset_model_config,
@@ -237,6 +239,44 @@ class TestAddMachine:
             add_machine(context, model="nonexistent")
 
 
+class TestAddStorage:
+    """Test the ``add_storage`` *Given* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Add storage")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``add_storage`` with only the required clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "add-storage",
+            "lustre-server/1",
+            "ost=1",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Add storage with all optionals")
+    def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
+        """Test ``add_storage`` with all optional clauses.
+
+        Notes:
+            - The ``flexible`` parser matches optional clauses in any order,
+              so a single "all optionals" scenario is sufficient.
+        """
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "add-storage",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "lustre-server/1",
+            "ost=loop,3,1G",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``add_storage`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            add_storage(context, "ost", "lustre-server/1", None, None, 1, "nonexistent")
+
+
 class TestRemoveUnit:
     """Test the ``remove_unit`` *Given* step handler."""
 
@@ -270,6 +310,44 @@ class TestRemoveUnit:
         """``remove_unit`` raises when the model is not in the context."""
         with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
             remove_unit(context, ["slurmctld/0"], "nonexistent")
+
+
+class TestRemoveStorage:
+    """Test the ``remove_storage`` *Given* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove storage")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``remove_storage`` with only the required clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "remove-storage",
+            "ost/0",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove storage in model")
+    def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
+        """Test ``remove_storage`` with all optional clauses.
+
+        Notes:
+            - The ``flexible`` parser matches list elements with any
+              conjunction style, so one multi-instance scenario is sufficient.
+        """
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "remove-storage",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "ost/0",
+            "ost/1",
+            "ost/2",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``remove_storage`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            remove_storage(context, ["ost/0"], "nonexistent")
 
 
 class TestPackCharm:

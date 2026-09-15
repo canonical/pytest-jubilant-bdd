@@ -42,3 +42,9 @@ Feature: Reusable `then` steps
 
   Scenario: Workload status message for unit with all optionals
     Then the workload status message for unit 'slurmctld/0' is 'installing agent' within '90' seconds
+
+  Scenario: Storage instances are attached
+    Then '3' instances of storage 'ost' are attached to unit 'lustre-server/1'
+
+  Scenario: Storage instances are attached with all optionals
+    Then '3' instances of storage 'ost' are attached to unit 'lustre-server/1' in model 'test' within '90' seconds

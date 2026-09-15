@@ -19,6 +19,8 @@ pytest-jubilant-bdd package include:
   Juju model.
 * `add_model`: A `given` step handler for adding a new Juju model to the
   testing context.
+* `add_storage`: A `given` step handler for adding storage to a deployed
+  unit, with optional storage pool, size, and count clauses.
 * `add_unit`: A `given` step handler for adding units to a deployed
   application.
 * `deploy`: A `given` step handler for deploying a charm from Charmhub.
@@ -32,6 +34,8 @@ pytest-jubilant-bdd package include:
   ``<APP>_CHARM_PATH`` environment variable is already set.
 * `remove_unit`: A `given` step handler for removing one or more units
   from a deployed application.
+* `remove_storage`: A `given` step handler for removing one or more storage
+  instances from a Juju model.
 * `is_app_config_set`: A `given` step handler for verifying that a
   configuration option on a deployed application is set to a value.
 * `is_integrated`: A `given` step handler for asserting that two applications
@@ -57,6 +61,10 @@ pytest-jubilant-bdd package include:
 * `assert_all_agent_status`: A `then` step handler for asserting the status
   of all agents in one or more models, with an optional `within '{timeout}'
   seconds` clause to override the global `--juju-bdd-wait-timeout`.
+* `assert_storage_attached`: A `then` step handler for asserting that a
+  number of storage instances are attached to a unit, with an optional
+  `within '{timeout}' seconds` clause to override the global
+  `--juju-bdd-wait-timeout`.
 * `assert_workload_status`: A `then` step handler for asserting the workload
   status of a deployed application, with an optional `within '{timeout}'
   seconds` clause to override the global `--juju-bdd-wait-timeout`.

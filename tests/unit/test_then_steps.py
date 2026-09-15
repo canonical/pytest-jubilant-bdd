@@ -19,7 +19,12 @@ from unittest.mock import MagicMock
 
 import pytest
 from constants import REUSABLE_THEN_STEP_TESTS
-from helpers import make_app_with_relation, make_status_json
+from helpers import (
+    make_app_with_relation,
+    make_status_json,
+    make_storage_instance,
+    make_storage_json,
+)
 from pytest_bdd import scenario
 from pytest_mock import MockerFixture
 
@@ -28,6 +33,7 @@ from pytest_jubilant_bdd import Context
 # ruff: disable[SLF001]
 from pytest_jubilant_bdd._main import (
     assert_all_agent_status,
+    assert_storage_attached,
     assert_workload_status,
     assert_workload_status_message,
 )
@@ -77,6 +83,19 @@ def _mock_status_message_installing(mock_subprocess_run: MagicMock) -> None:
     }
     mock_subprocess_run.return_value = MagicMock(
         stdout=make_status_json({"slurmctld": app}),
+        stderr="",
+    )
+
+
+@pytest.fixture(scope="function")
+def _mock_storage_attached(mock_subprocess_run: MagicMock) -> None:
+    """Configure ``mock_subprocess_run`` to return a storage JSON payload.
+
+    The default payload contains three attached ``ost`` instances, matching
+    the storage scenarios in ``then.feature``.
+    """
+    mock_subprocess_run.return_value = MagicMock(
+        stdout=make_storage_json(),
         stderr="",
     )
 
@@ -334,3 +353,86 @@ class TestAssertWorkloadStatusMessage:
 
         with pytest.raises(TimeoutError, match="Wait timed out"):
             assert_workload_status_message(context, "unit", "slurmctld/0", "wrong")
+
+
+class TestAssertStorageAttached:
+    """Test the ``assert_storage_attached`` *Then* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_THEN_STEP_TESTS, "Storage instances are attached")
+    def test_required(mock_subprocess_run: MagicMock, _mock_storage_attached: None) -> None:
+        """Test ``assert_storage_attached`` with only the required clause.
+
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
+        """
+
+    @staticmethod
+    @scenario(REUSABLE_THEN_STEP_TESTS, "Storage instances are attached with all optionals")
+    def test_with_optionals(
+        mock_subprocess_run: MagicMock,
+        _mock_storage_attached: None,
+    ) -> None:
+        """Test ``assert_storage_attached`` with all optional clauses.
+
+        Notes:
+            - No assertion is needed. The handler raises ``TimeoutError`` if the
+              assertion fails. Reaching this point means the assertion passed.
+        """
+
+    def test_raises_when_storage_not_attached(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        mocker: MockerFixture,
+    ) -> None:
+        """``assert_storage_attached`` times out when not enough instances are attached."""
+        # Each entry covers a different non-matching case in `instances_are_attached`:
+        # a different storage label, a pending instance, an instance with no
+        # attachments, and an instance attached to a different unit.
+        instances = {
+            "mgt/0": make_storage_instance(unit="lustre-server/1"),
+            "ost/1": make_storage_instance(unit="lustre-server/1", status="pending"),
+            "ost/2": {k: v for k, v in make_storage_instance().items() if k != "attachments"},
+            "ost/3": make_storage_instance(unit="other/0"),
+        }
+        mock_subprocess_run.return_value = MagicMock(
+            stdout=make_storage_json(instances),
+            stderr="",
+        )
+        mocker.patch("time.monotonic", side_effect=[0.0, 0.1, 999.0])
+
+        with pytest.raises(TimeoutError, match="Wait timed out"):
+            assert_storage_attached(context, 3, "ost", "lustre-server/1", None)
+
+    def test_handles_empty_storage_output(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        mocker: MockerFixture,
+    ) -> None:
+        """``assert_storage_attached`` handles ``juju storage`` returning no output."""
+        # `juju storage` prints nothing when the model has no storage yet, which
+        # is the case on the first poll after `juju add-storage`.
+        mock_subprocess_run.return_value = MagicMock(stdout="", stderr="")
+        mocker.patch("time.monotonic", side_effect=[0.0, 0.1, 999.0])
+
+        with pytest.raises(TimeoutError, match="Wait timed out"):
+            assert_storage_attached(context, 1, "ost", "lustre-server/1", None)
+
+    def test_custom_timeout_is_passed_to_wait(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        mocker: MockerFixture,
+    ) -> None:
+        """A custom ``within '{timeout}' seconds`` value overrides the global wait timeout."""
+        mock_subprocess_run.return_value = MagicMock(
+            stdout=make_storage_json(),
+            stderr="",
+        )
+        mocker.patch("time.monotonic", side_effect=[0.0, 999.0])
+
+        with pytest.raises(TimeoutError, match="after 90"):
+            assert_storage_attached(context, 99, "ost", "lustre-server/1", None, timeout=90.0)

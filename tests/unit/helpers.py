@@ -161,3 +161,51 @@ def make_task_json(
     task["return-code"] = return_code
     task["results"] = results if results is not None else {}
     return json.dumps({target: task})
+
+
+# ---
+# Mocked `juju storage --format json` output for unit tests.
+# ---
+
+
+def make_storage_instance(
+    unit: str = "lustre-server/1",
+    *,
+    status: str = "attached",
+    location: str = "/srv/ost/0",
+) -> dict:
+    """Build a storage instance dictionary for a ``juju storage`` JSON payload.
+
+    Args:
+        unit: Name of the unit the storage instance is attached to.
+        status: Status of the storage instance (e.g. ``"attached"``, ``"pending"``).
+        location: Mount location of the storage instance.
+    """
+    return {
+        "kind": "filesystem",
+        "life": "alive",
+        "status": {"current": status, "since": "2026-01-01 00:00:00"},
+        "persistent": True,
+        "attachments": {
+            "units": {
+                unit: {
+                    "machine": "1",
+                    "location": location,
+                    "life": "alive",
+                }
+            }
+        },
+    }
+
+
+def make_storage_json(instances: dict[str, dict] | None = None) -> str:
+    """Build a mocked ``juju storage --format json`` payload.
+
+    Args:
+        instances: Mapping of storage ID to storage instance dict. If ``None``,
+            a default payload of three ``ost`` instances attached to
+            ``lustre-server/1`` is used.
+    """
+    if instances is None:
+        instances = {f"ost/{i}": make_storage_instance(location=f"/srv/ost/{i}") for i in range(3)}
+    return json.dumps({"storage": instances})

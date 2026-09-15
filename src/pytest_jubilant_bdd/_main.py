@@ -157,6 +157,43 @@ def add_machine(
 
 @given(
     flexible(
+        "I add storage '{storage}' to unit '{unit}' "
+        "[from pool '{pool}'] "
+        "[of size '{size}'] "
+        "[with '{count}' %instances?%] " + OPTIONAL_MODEL_CLAUSE
+    ),
+    converters={"count": lambda v: int(v) if v is not None else 1},
+)
+def add_storage(
+    context: Context,
+    storage: str,
+    unit: str,
+    pool: str | None,
+    size: str | None,
+    count: int,
+    model: str | None,
+) -> None:
+    """Add one or more storage instances to a deployed unit.
+
+    Notes:
+        - The storage directive is built from the optional clauses in the order
+          recommended by the Juju CLI: ``<pool>,<count>,<size>``. If no count is
+          provided, one storage instance is added.
+    """
+    juju = context.get_juju(model)
+
+    parts: list[str] = []
+    if pool is not None:
+        parts.append(pool)
+    parts.append(str(count))
+    if size is not None:
+        parts.append(size)
+
+    juju.cli("add-storage", unit, f"{storage}={','.join(parts)}")
+
+
+@given(
+    flexible(
         r"I remove %units? (?P<units>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
         + OPTIONAL_MODEL_CLAUSE
     ),
@@ -167,6 +204,20 @@ def remove_unit(context: Context, units: list[str], model: str | None) -> None:
     juju = context.get_juju(model)
 
     juju.remove_unit(*units)
+
+
+@given(
+    flexible(
+        r"I remove %storage (?P<storages>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
+        + OPTIONAL_MODEL_CLAUSE
+    ),
+    converters={"storages": make_list},
+)
+def remove_storage(context: Context, storages: list[str], model: str | None) -> None:
+    """Remove one or more storage instances from a Juju model."""
+    juju = context.get_juju(model)
+
+    juju.cli("remove-storage", *storages)
 
 
 @given(
@@ -572,7 +623,7 @@ def assert_all_agent_status(
     will be validated.
 
     Notes:
-        - If a timeout is provided, it overrides the global ``--juju-bdd-wait-timeout`` 
+        - If a timeout is provided, it overrides the global ``--juju-bdd-wait-timeout``
           for this step.
     """
     context.wait(
@@ -625,7 +676,7 @@ def assert_workload_status_message(
     """Assert the workload status message of an application or unit.
 
     Notes:
-        - If a timeout is provided, it overrides the global ``--juju-bdd-wait-timeout`` 
+        - If a timeout is provided, it overrides the global ``--juju-bdd-wait-timeout``
           for this step.
     """
     match type_:
@@ -643,3 +694,38 @@ def assert_workload_status_message(
                 ),
                 timeout=timeout,
             )
+
+
+@then(
+    flexible(
+        r"%'(?P<count>\d+)' instances of storage '(?P<storage>[^']+)'"
+        r" are attached to unit '(?P<unit>[^']+)'% "
+        + OPTIONAL_MODEL_CLAUSE
+        + " "
+        + OPTIONAL_TIMEOUT_CLAUSE
+    ),
+    converters={
+        "count": int,
+        "timeout": lambda v: float(v) if v is not None else None,
+    },
+)
+def assert_storage_attached(
+    context: Context,
+    count: int,
+    storage: str,
+    unit: str,
+    model: str | None,
+    timeout: float | None = None,
+) -> None:
+    """Assert that a number of storage instances are attached to a unit.
+
+    Notes:
+        - If a timeout is provided, it overrides the global ``--juju-bdd-wait-timeout``
+          for this step.
+    """
+    context.wait(
+        ready=lambda ctx: assertions.storage.instances_are_attached(
+            ctx, storage, unit, count=count, model=model
+        ),
+        timeout=timeout,
+    )

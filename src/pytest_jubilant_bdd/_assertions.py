@@ -16,6 +16,7 @@
 
 __all__ = ["assertions"]
 
+import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -196,6 +197,54 @@ class ModelAssertions:
         return True
 
 
+class StorageAssertions:
+    """Reusable storage-level assertions."""
+
+    @staticmethod
+    def instances_are_attached(
+        context: "Context",
+        storage: str,
+        unit: str,
+        *,
+        count: int,
+        model: str | None = None,
+    ) -> bool:
+        """Validate that a number of storage instances are attached to a unit.
+
+        Args:
+            context: Reference to the current testing :class:`Context` object.
+            storage: Name of the storage (as defined in the charm's metadata)
+                to assess the attachment status of.
+            unit: Unit that the storage instances should be attached to.
+            count: The minimum number of storage instances that should be
+                attached to ``unit``.
+            model: Name of the model to search for the storage in. If ``None``,
+                the current model is used.
+        """
+        juju = context.get_juju(model)
+
+        # `juju storage` outputs nothing when the model has no storage, so guard
+        # against an empty payload before parsing.
+        output = juju.cli("storage", "--format", "json")
+        storages = json.loads(output).get("storage", {}) if output.strip() else {}
+
+        attached = 0
+        for storage_id, info in storages.items():
+            label, _, _ = storage_id.partition("/")
+            if label != storage:
+                continue
+            if info["status"]["current"] != "attached":
+                continue
+            attachments = info.get("attachments")
+            if attachments is None:
+                continue
+            if unit not in attachments["units"]:
+                continue
+            attached += 1
+
+        return attached >= count
+
+
 class UnitAssertions:
     """Reusable unit-level assertions."""
 
@@ -263,6 +312,7 @@ class Assertions:
 
     app: AppAssertions = AppAssertions()
     model: ModelAssertions = ModelAssertions()
+    storage: StorageAssertions = StorageAssertions()
     unit: UnitAssertions = UnitAssertions()
 
 
