@@ -57,7 +57,7 @@ test *targets:
 test-all: unit
 
 # Run unit tests
-unit *args:
+unit *args: lock
     {{uv_run}} coverage run -m pytest --tb native -v -s {{args}} tests/unit
     {{uv_run}} coverage report
     {{uv_run}} coverage xml -o {{justfile_directory() / "cover" / "coverage.xml"}}
@@ -83,16 +83,16 @@ upgrade:
     uv lock --upgrade
 
 # Apply formatting standards
-fmt:
+fmt: lock
     {{uv_run}} ruff format
     {{uv_run}} ruff check --fix
 
 # Check files against style standards
-lint:
+lint: lock
     {{uv_run}} ruff check
 
 # Perform type checking
-typecheck:
+typecheck: lock
     {{uv_run}} pyright
 
 # Show available recipes
