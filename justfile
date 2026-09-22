@@ -33,7 +33,7 @@ clean:
     find . -type f -name "*.pyc" -delete
 
 # Apply static checks
-check: fmt lint typecheck
+check: lint typecheck
 
 # Run tests for specified targets, or all tests if none specified
 test *targets:
