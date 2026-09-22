@@ -174,6 +174,10 @@ Do NOT write a separate test for each permutation of optional clauses. The `flex
 
 `assert_workload_status` and `assert_workload_status_message` use the `flexible` parser with `%...%` blocks (they migrated from `parsers.re` to support the optional `within '{timeout}' seconds` clause). Handlers with a `type_` capture group (app/unit) need two `@scenario` tests: one for `app` and one for `unit`. These tests exercise different code paths in the handler's `match` statement.
 
+## Checkpoint conversions need no new tests
+
+Converting an existing `@then` handler into a checkpoint handler (stacking `@given`/`@when`/`@then`, see the *Checkpoint handlers* section in the `reusable-step-handler` skill) adds no new code paths: the stacked decorators reuse the exact same step pattern for every stanza type, and every decorator returns the handler function unchanged. The existing `Test<Handler>` class in `test_then_steps.py` — including its direct-call error-path tests — continues to cover the handler, so no new test class or scenarios are required. Only write new tests when the step text or the handler behavior itself changes.
+
 ## Testing error paths
 
 Error paths are tested by calling the handler function directly (not via `@scenario`). Use `pytest.raises` to assert the expected exception:

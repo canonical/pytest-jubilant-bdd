@@ -12,7 +12,7 @@ This skill covers implementing a new reusable Gherkin step handler in `src/pytes
 
 1. **Pick the parser** — Choose `parsers.parse`, `flexible`, or `parsers.re` for the step pattern.
 2. **Write the handler** — Implement the handler function with proper error handling. If it uses `flexible`, follow the rules in. If it needs an embedded regex, use `%…%` blocks.
-3. **Wire into `_main.py`** — Place the handler under the correct comment block (Given/When/Then). Ensure it uses `context.get_juju()`and pushes results to the appropriate stack for `when` steps.
+3. **Wire into `_main.py`** — Place the handler under the correct comment block (Given/When/Then/Checkpoint). Ensure it uses `context.get_juju()` and pushes results to the appropriate stack for `when` steps.
 4. **Author feature scenarios** — Add a scenario for each happy-path test to `tests/unit/features/<keyword>.feature`.
 5. **Write unit tests** — Follow `.agents/skills/unit-testing/SKILL.md`.
 6. **Update `README.md`** — Add a bullet for the new public step.
@@ -20,7 +20,7 @@ This skill covers implementing a new reusable Gherkin step handler in `src/pytes
 
 ## Overview
 
-All reusable step handlers live in `src/pytest_jubilant_bdd/_main.py`. The module is organized into three sections: **Given** steps (setup and context building), **When** steps (actions), and **Then** steps (attestation and verification). Each handler is decorated with `@given`, `@when`, or `@then` from `pytest_bdd` and accepts a `context: Context` parameter as its first argument.
+All reusable step handlers live in `src/pytest_jubilant_bdd/_main.py`. The module is organized into three sections: **Given** steps (setup and context building), **When** steps (actions), and **Checkpoint** steps (attestation and verification, registered for `given`, `when`, and `then` alike — see *Checkpoint handlers* below). Each handler is decorated with `@given`, `@when`, or `@then` from `pytest_bdd` — or with all three at once for checkpoint handlers — and accepts a `context: Context` parameter as its first argument.
 
 The handler's step pattern determines which parser to use. Three options exist:
 
@@ -188,6 +188,55 @@ Read these in `_main.py` as canonical examples:
 - `assert_workload_status` — `%the workload status for (?P<type_>app|unit) '(?P<target>[^']+)'%` and `%'(?P<status>{'|'.join(WORKLOAD_STATUSES)})'%` — alternation and bracket expressions, paired with the optional `OPTIONAL_TIMEOUT_CLAUSE`.
 - `assert_workload_status_message` — same shape as `assert_workload_status` with `%'(?P<message>[^']*)'%` for the message capture.
 
+## Checkpoint handlers (Given / When / Then stacking)
+
+Checkpoint-style assertions — for example, waiting until all agents are idle
+before running actions — are useful in any stanza of a scenario, not just the
+`Then` stanza. In Gherkin, the `And` and `But` conjunctions inherit the keyword
+of the **preceding** step, so `pytest-bdd` resolves `And all agents are 'idle'`
+written after a `Given` step as a *given* step. To make an assertion usable as
+a checkpoint in every stanza, stack all three step decorators on one handler.
+
+Define the step pattern and the `converters` dict once as private module-level
+constants, then apply `@given`, `@when`, and `@then` with the same pattern:
+
+```python
+_ALL_AGENT_STATUS_STEP = (
+    rf"all agents are %'{AGENT_STATUS_CAPTURE_GROUP}'% "
+    r"[in %models? (?P<models>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%] "
+    + OPTIONAL_TIMEOUT_CLAUSE
+)
+_ALL_AGENT_STATUS_CONVERTERS = {
+    "models": make_list,
+    "timeout": lambda v: float(v) if v is not None else None,
+}
+
+
+@given(flexible(_ALL_AGENT_STATUS_STEP), converters=_ALL_AGENT_STATUS_CONVERTERS)
+@when(flexible(_ALL_AGENT_STATUS_STEP), converters=_ALL_AGENT_STATUS_CONVERTERS)
+@then(flexible(_ALL_AGENT_STATUS_STEP), converters=_ALL_AGENT_STATUS_CONVERTERS)
+def assert_all_agent_status(context, status, models, timeout=None):
+    ...
+```
+
+Rules for checkpoint handlers:
+
+- Use the stacked form **only** for verification-style steps that should be
+  available in any stanza. Steps that logically belong to one stanza keep a
+  single `@given`/`@when`/`@then` decorator.
+- Sharing one `flexible(...)` parser instance across the three decorators is
+  safe: `flexible` compiles its regexes once in `__init__` and its matching
+  methods are read-only.
+- `pytest-bdd` registers each decorator as a separate step-definition fixture
+  keyed by step type, so the three registrations cannot collide. Every
+  decorator returns the handler unchanged, so error-path unit tests can keep
+  calling the function directly.
+- Place the handler under the `# Checkpoint steps` comment block in `_main.py`
+  (after the When steps).
+
+Reference handlers: `assert_all_agent_status`, `assert_workload_status`,
+`assert_workload_status_message`, and `assert_storage_attached`.
+
 ## Base-function / private-helper pattern
 
 When two handlers share most of their CLI call, factor out a private helper. The `deploy` and `deploy_local` handlers both delegate to `_deploy`:
@@ -326,19 +375,14 @@ def _reset_stacks(context: Context) -> None:
         context.action_results.pop()
 ```
 
-### Then-step polling with `context.wait()`
+### Checkpoint-step polling with `context.wait()`
 
-Then-step handlers use `context.wait()` to poll a readiness condition until the assertion passes three times consecutively:
+Verification handlers use `context.wait()` to poll a readiness condition until the assertion passes three times consecutively:
 
 ```python
-@then(
-    flexible(
-        r"%the workload status for (?P<type_>app|unit) '(?P<target>[^']+)'%"
-        rf" is %'{WORKLOAD_STATUS_CAPTURE_GROUP}'% "
-        + OPTIONAL_TIMEOUT_CLAUSE
-    ),
-    converters={"timeout": lambda v: float(v) if v is not None else None},
-)
+@given(flexible(_WORKLOAD_STATUS_STEP), converters=_WORKLOAD_STATUS_CONVERTERS)
+@when(flexible(_WORKLOAD_STATUS_STEP), converters=_WORKLOAD_STATUS_CONVERTERS)
+@then(flexible(_WORKLOAD_STATUS_STEP), converters=_WORKLOAD_STATUS_CONVERTERS)
 def assert_workload_status(context, type_, target, status, timeout):
     match type_:
         case "app":
@@ -403,6 +447,10 @@ Exercise every optional clause in a single scenario. Order them for readability;
 
 Handlers with a `type_` capture group (e.g. `assert_workload_status`, whether `parsers.re` or `flexible` with `%…%` blocks) need **two** scenarios: one for `app` and one for `unit`. These exercise different code paths in the handler's `match` statement.
 
+### Checkpoint conversions need no new scenarios
+
+Converting an existing `@then` handler into a checkpoint handler (stacking `@given`/`@when`/`@then`, see *Checkpoint handlers*) does **not** require new scenarios in `given.feature` or `when.feature`: the stacked decorators reuse the exact same pattern for every step type, and the handler body is already exercised by the existing `then.feature` scenarios. Only add new scenarios when the step text itself changes.
+
 ## Cross-reference: unit tests
 
 Do not duplicate test patterns here. After implementing the handler and feature scenarios, follow the unit-testing skill for writing the test class:
@@ -410,6 +458,7 @@ Do not duplicate test patterns here. After implementing the handler and feature 
 - Path: `.agents/skills/unit-testing/SKILL.md`
 - Covers: `Test<Handler>` class structure, `@staticmethod @scenario`, error-path `pytest.raises`, fixture setup (`mock_subprocess_run`, `mock_status_json`, `_mock_time`), helper-function usage (`make_status_json`, `make_app_with_relation`, `make_task_json`), and subprocess assertion patterns.
 - **The handler and its tests must land in the same change.**
+- Converting an existing handler to a checkpoint handler adds no new code paths: the existing `Test<Handler>` class in `test_then_steps.py` continues to cover it (the decorators return the function unchanged), so no new test class is required.
 
 ## Updating `README.md`
 
@@ -422,8 +471,11 @@ If the handler is a public-facing Gherkin step, add a bullet under the appropria
 
 Rules:
 
-- Keep bullets alphabetized within each section (Given / When / Then).
+- Keep bullets alphabetized within each section (Given / When / Checkpoint).
 - Use backticks for the handler function name.
+- Document checkpoint handlers as "A checkpoint step handler for …" (usable in
+  `given`, `when`, or `then` blocks via `And`/`But`), not "A `then` step
+  handler for …".
 - Skip this step for internal helpers (`_deploy`) that aren't surfaced to Gherkin users.
 
 ## Constraints
