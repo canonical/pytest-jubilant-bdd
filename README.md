@@ -60,19 +60,28 @@ pytest-jubilant-bdd package include:
   machines or units.
 * `run_ssh`: A `when` step handler for SSHing into a machine or unit and
   executing a command.
-* `assert_all_agent_status`: A `then` step handler for asserting the status
-  of all agents in one or more models, with an optional `within '{timeout}'
-  seconds` clause to override the global `--juju-bdd-wait-timeout`.
-* `assert_storage_attached`: A `then` step handler for asserting that a
+* `assert_all_agent_status`: A checkpoint step handler for asserting the
+  status of all agents in one or more models, with an optional
+  `within '{timeout}' seconds` clause to override the global
+  `--juju-bdd-wait-timeout`.
+* `assert_storage_attached`: A checkpoint step handler for asserting that a
   number of storage instances are attached to a unit, with an optional
   `within '{timeout}' seconds` clause to override the global
   `--juju-bdd-wait-timeout`.
-* `assert_workload_status`: A `then` step handler for asserting the workload
-  status of a deployed application, with an optional `within '{timeout}'
-  seconds` clause to override the global `--juju-bdd-wait-timeout`.
-* `assert_workload_status_message`: A `then` step handler for asserting the
-  message attached to a workload status, with an optional `within '{timeout}'
-  seconds` clause to override the global `--juju-bdd-wait-timeout`.
+* `assert_workload_status`: A checkpoint step handler for asserting the
+  workload status of a deployed application, with an optional
+  `within '{timeout}' seconds` clause to override the global
+  `--juju-bdd-wait-timeout`.
+* `assert_workload_status_message`: A checkpoint step handler for asserting
+  the message attached to a workload status, with an optional
+  `within '{timeout}' seconds` clause to override the global
+  `--juju-bdd-wait-timeout`.
+
+Checkpoint assertions are registered for `given`, `when`, and `then` steps
+alike, so they can be used as checkpoints in any stanza of a scenario through
+the `And`/`But` conjunctions. For example, `Given I deploy 'slurmctld'`
+followed by `And all agents are 'idle'` waits for the deployment to settle
+before proceeding to the next step.
 
 For more information on how to use or contribute to pytest-jubilant-bdd,
 check out the [Development](#-development) section below 👇

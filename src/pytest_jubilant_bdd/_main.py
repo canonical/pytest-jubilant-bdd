@@ -608,20 +608,26 @@ def run_ssh(
     # to "machine" or "unit". Otherwise, this handler will not match the Gherkin step.
 
 
-# Then steps - Attestation and verification.
+# Checkpoint steps - Attestation and verification.
+#
+# Each handler below is registered as a `given`, `when`, and `then` step so
+# that checkpoint-style assertions can be used in any stanza of a scenario
+# through the `And` and `But` conjunctions.
 
 
-@then(
-    flexible(
-        rf"all agents are %'{AGENT_STATUS_CAPTURE_GROUP}'% "
-        r"[in %models? (?P<models>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%] "
-        + OPTIONAL_TIMEOUT_CLAUSE
-    ),
-    converters={
-        "models": make_list,
-        "timeout": lambda v: float(v) if v is not None else None,
-    },
+_ALL_AGENT_STATUS_STEP = (
+    rf"all agents are %'{AGENT_STATUS_CAPTURE_GROUP}'% "
+    r"[in %models? (?P<models>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%] " + OPTIONAL_TIMEOUT_CLAUSE
 )
+_ALL_AGENT_STATUS_CONVERTERS = {
+    "models": make_list,
+    "timeout": lambda v: float(v) if v is not None else None,
+}
+
+
+@given(flexible(_ALL_AGENT_STATUS_STEP), converters=_ALL_AGENT_STATUS_CONVERTERS)
+@when(flexible(_ALL_AGENT_STATUS_STEP), converters=_ALL_AGENT_STATUS_CONVERTERS)
+@then(flexible(_ALL_AGENT_STATUS_STEP), converters=_ALL_AGENT_STATUS_CONVERTERS)
 def assert_all_agent_status(
     context: Context, status: AgentStatus, models: list[str], timeout: float | None = None
 ) -> None:
@@ -640,13 +646,16 @@ def assert_all_agent_status(
     )
 
 
-@then(
-    flexible(
-        r"%the workload status for (?P<type_>app|unit) '(?P<target>[^']+)'%"
-        rf" is %'{WORKLOAD_STATUS_CAPTURE_GROUP}'% " + OPTIONAL_TIMEOUT_CLAUSE
-    ),
-    converters={"timeout": lambda v: float(v) if v is not None else None},
+_WORKLOAD_STATUS_STEP = (
+    r"%the workload status for (?P<type_>app|unit) '(?P<target>[^']+)'%"
+    rf" is %'{WORKLOAD_STATUS_CAPTURE_GROUP}'% " + OPTIONAL_TIMEOUT_CLAUSE
 )
+_WORKLOAD_STATUS_CONVERTERS = {"timeout": lambda v: float(v) if v is not None else None}
+
+
+@given(flexible(_WORKLOAD_STATUS_STEP), converters=_WORKLOAD_STATUS_CONVERTERS)
+@when(flexible(_WORKLOAD_STATUS_STEP), converters=_WORKLOAD_STATUS_CONVERTERS)
+@then(flexible(_WORKLOAD_STATUS_STEP), converters=_WORKLOAD_STATUS_CONVERTERS)
 def assert_workload_status(
     context: Context, type_: str, target: str, status: WorkloadStatus, timeout: float | None = None
 ) -> None:
@@ -671,13 +680,16 @@ def assert_workload_status(
             )
 
 
-@then(
-    flexible(
-        r"%the workload status message for (?P<type_>app|unit) '(?P<target>[^']+)'%"
-        r" is %'(?P<message>[^']*)'% " + OPTIONAL_TIMEOUT_CLAUSE
-    ),
-    converters={"timeout": lambda v: float(v) if v is not None else None},
+_WORKLOAD_STATUS_MESSAGE_STEP = (
+    r"%the workload status message for (?P<type_>app|unit) '(?P<target>[^']+)'%"
+    r" is %'(?P<message>[^']*)'% " + OPTIONAL_TIMEOUT_CLAUSE
 )
+_WORKLOAD_STATUS_MESSAGE_CONVERTERS = {"timeout": lambda v: float(v) if v is not None else None}
+
+
+@given(flexible(_WORKLOAD_STATUS_MESSAGE_STEP), converters=_WORKLOAD_STATUS_MESSAGE_CONVERTERS)
+@when(flexible(_WORKLOAD_STATUS_MESSAGE_STEP), converters=_WORKLOAD_STATUS_MESSAGE_CONVERTERS)
+@then(flexible(_WORKLOAD_STATUS_MESSAGE_STEP), converters=_WORKLOAD_STATUS_MESSAGE_CONVERTERS)
 def assert_workload_status_message(
     context: Context, type_: str, target: str, message: str, timeout: float | None = None
 ) -> None:
@@ -704,19 +716,22 @@ def assert_workload_status_message(
             )
 
 
-@then(
-    flexible(
-        r"%'(?P<count>\d+)' instances of storage '(?P<storage>[^']+)'"
-        r" are attached to unit '(?P<unit>[^']+)'% "
-        + OPTIONAL_MODEL_CLAUSE
-        + " "
-        + OPTIONAL_TIMEOUT_CLAUSE
-    ),
-    converters={
-        "count": int,
-        "timeout": lambda v: float(v) if v is not None else None,
-    },
+_STORAGE_ATTACHED_STEP = (
+    r"%'(?P<count>\d+)' instances of storage '(?P<storage>[^']+)'"
+    r" are attached to unit '(?P<unit>[^']+)'% "
+    + OPTIONAL_MODEL_CLAUSE
+    + " "
+    + OPTIONAL_TIMEOUT_CLAUSE
 )
+_STORAGE_ATTACHED_CONVERTERS = {
+    "count": int,
+    "timeout": lambda v: float(v) if v is not None else None,
+}
+
+
+@given(flexible(_STORAGE_ATTACHED_STEP), converters=_STORAGE_ATTACHED_CONVERTERS)
+@when(flexible(_STORAGE_ATTACHED_STEP), converters=_STORAGE_ATTACHED_CONVERTERS)
+@then(flexible(_STORAGE_ATTACHED_STEP), converters=_STORAGE_ATTACHED_CONVERTERS)
 def assert_storage_attached(
     context: Context,
     count: int,
