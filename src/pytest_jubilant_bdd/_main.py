@@ -383,6 +383,14 @@ def integrate(context: Context, app_one: str, app_two: str, model: str | None) -
     juju.integrate(app_one, app_two)
 
 
+@given(flexible("I disintegrate '{app_one}' and '{app_two}' " + OPTIONAL_MODEL_CLAUSE))
+def disintegrate(context: Context, app_one: str, app_two: str, model: str | None) -> None:
+    """Disintegrate two applications (remove the relation between them)."""
+    juju = context.get_juju(model)
+
+    juju.remove_relation(app_one, app_two)
+
+
 @given(parsers.parse("model '{model}' exists"))
 def model_exists(context: Context, model: str) -> None:
     """Verify that a model exists in the current testing context."""

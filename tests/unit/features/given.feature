@@ -30,6 +30,13 @@ Feature: Reusable `given` steps
     Given I add model 'test'
     Given I integrate 'slurmctld' with 'slurmd' in model 'test'
 
+  Scenario: Disintegrate
+    Given I disintegrate 'slurmctld' and 'slurmd'
+
+  Scenario: Disintegrate in model
+    Given I add model 'test'
+    Given I disintegrate 'slurmctld' and 'slurmd' in model 'test'
+
   Scenario: Model exists
     Given I add model 'test'
     Given model 'test' exists

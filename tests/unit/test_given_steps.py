@@ -35,6 +35,7 @@ from pytest_jubilant_bdd._main import (
     add_storage,
     add_unit,
     deploy_local,
+    disintegrate,
     integrate,
     is_app_config_set,
     is_deployed,
@@ -557,6 +558,39 @@ class TestIntegrate:
         """``integrate`` raises when the model is not in the context."""
         with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
             integrate(context, "slurmctld", "slurmd", "nonexistent")
+
+
+class TestDisintegrate:
+    """Test the ``disintegrate`` *Given* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Disintegrate")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``disintegrate`` with only the required clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "remove-relation",
+            "slurmctld",
+            "slurmd",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Disintegrate in model")
+    def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
+        """Test ``disintegrate`` with the ``in model`` optional clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "remove-relation",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "slurmctld",
+            "slurmd",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``disintegrate`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            disintegrate(context, "slurmctld", "slurmd", "nonexistent")
 
 
 class TestModelExists:

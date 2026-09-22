@@ -26,6 +26,8 @@ pytest-jubilant-bdd package include:
 * `deploy`: A `given` step handler for deploying a charm from Charmhub.
 * `deploy_local`: A `given` step handler for deploying a local `.charm` file
   onto a Juju model.
+* `disintegrate`: A `given` step handler for removing the integration
+  between two Juju applications.
 * `integrate`: A `given` step handler for integrating two Juju applications.
 * `model_exists`: A `given` step handler for asserting that a Juju model
   currently exists.
