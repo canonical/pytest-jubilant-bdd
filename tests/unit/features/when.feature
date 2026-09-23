@@ -11,6 +11,9 @@ Feature: Reusable `when` steps
   Scenario: Run action on multiple units with params in model
     When I run action 'set-config' on units 'slurmctld/0', 'slurmctld/1', and 'slurmctld/2' with parameters 'debug=true key=val' in model 'test'
 
+  Scenario: Run failing action on one unit
+    When I run action 'failing-action' on unit 'slurmctld/0'
+
   Scenario: Exec command on one machine
     When I execute 'hostname' on machine '0'
 
@@ -19,6 +22,9 @@ Feature: Reusable `when` steps
 
   Scenario: Exec command on multiple units in model
     When I execute 'systemctl restart slurmd' on units 'slurmd/0', 'slurmd/1', and 'slurmd/2' in model 'test'
+
+  Scenario: Exec failing command on one machine
+    When I execute 'exit 2' on machine '0'
 
   Scenario: SSH into machine and execute command
     When I ssh into machine '0' and I execute 'hostname'

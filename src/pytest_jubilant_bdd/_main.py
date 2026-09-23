@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+from jubilant import TaskError
 from pytest_bdd import given, parsers, then, when
 
 from ._assertions import assertions
@@ -548,7 +549,11 @@ def run_action(
         # `Juju.run` performs a `NoneType` check on `params`, but not a zero-value check.
         # Set `params` to `None` if the Gherkin step doesn't include action parameters to
         # avoid the creation of a superfluous temp file.
-        result = juju.run(unit, action, params=params if params else None)
+        try:
+            result = juju.run(unit, action, params=params if params else None)
+        except TaskError as e:
+            result = e.task
+
         context.action_results.push(result)
 
 
@@ -570,11 +575,14 @@ def run_exec(
     juju = context.get_juju(model)
 
     for target in targets:
-        match type_.rstrip("s"):
-            case "machine":
-                result = juju.exec(command, machine=target)
-            case "unit":
-                result = juju.exec(command, unit=cast(str, target))
+        try:
+            match type_.rstrip("s"):
+                case "machine":
+                    result = juju.exec(command, machine=target)
+                case "unit":
+                    result = juju.exec(command, unit=cast(str, target))
+        except TaskError as e:
+            result = e.task
 
         context.exec_results.push(result)  # type: ignore[reportPossiblyUnboundVariable] # noqa
         # `result` cannot be unbound because this step handler will always match `type_`

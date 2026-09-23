@@ -57,6 +57,24 @@ def _mock_task_json(mock_subprocess_run: MagicMock) -> None:
     )
 
 
+@pytest.fixture(scope="function")
+def _mock_failed_action(mock_subprocess_run: MagicMock) -> None:
+    """Configure ``mock_subprocess_run`` to return a failed action ``Task``."""
+    mock_subprocess_run.return_value = MagicMock(
+        stdout=make_task_json("slurmctld/0", status="failed", return_code=1),
+        stderr="",
+    )
+
+
+@pytest.fixture(scope="function")
+def _mock_failed_command(mock_subprocess_run: MagicMock) -> None:
+    """Configure ``mock_subprocess_run`` to return a failed ``juju exec`` ``Task``."""
+    mock_subprocess_run.return_value = MagicMock(
+        stdout=make_task_json("0", status="completed", return_code=2),
+        stderr="",
+    )
+
+
 class TestRunAction:
     """Test the ``run_action`` *When* step handler."""
 
@@ -99,6 +117,17 @@ class TestRunAction:
             assert "--params" in call.args[0]
 
         assert len(context.action_results) == 3
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Run failing action on one unit")
+    def test_failing_action(context: Context, _mock_failed_action: None) -> None:
+        """Test that a failing action is recorded."""
+        assert len(context.action_results) == 1
+
+        task = context.action_results.peek()
+        assert isinstance(task, Task)
+        assert task.status == "failed"
+        assert task.return_code == 1
 
 
 class TestRunExec:
@@ -161,6 +190,17 @@ class TestRunExec:
         assert units_called == ["slurmd/0", "slurmd/1"]
 
         assert len(context.exec_results) == 2
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Exec failing command on one machine")
+    def test_failing_command(context: Context, _mock_failed_command: None) -> None:
+        """Test that a failing command is recorded."""
+        assert len(context.exec_results) == 1
+
+        task = context.exec_results.peek()
+        assert isinstance(task, Task)
+        assert task.status == "completed"
+        assert task.return_code == 2
 
 
 class TestRunSSH:

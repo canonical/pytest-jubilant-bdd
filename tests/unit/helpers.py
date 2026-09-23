@@ -133,7 +133,6 @@ _TASK_TEMPLATE = {
     "id": "1",
     "status": "completed",
     "results": {},
-    "return-code": 0,
 }
 
 
@@ -158,8 +157,7 @@ def make_task_json(
     task = dict(_TASK_TEMPLATE)
     task["id"] = task_id
     task["status"] = status
-    task["return-code"] = return_code
-    task["results"] = results if results is not None else {}
+    task["results"] = {"return-code": return_code, **(results if results is not None else {})}
     return json.dumps({target: task})
 
 
