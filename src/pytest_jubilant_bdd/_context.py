@@ -321,9 +321,15 @@ class Context:
         """
         apps = [unit.split("/", maxsplit=1)[0] for unit in units]
         current_apps = self.get_apps(*apps, model=model)
-        current_units = {
-            name: unit for app in current_apps.values() for name, unit in app.units.items()
-        }
+        current_models = self.get_models(model) if model else self.models
+        current_units: dict[str, UnitStatus] = {}
+        for model_ in current_models.values():
+            status = model_.status()
+            for app_name in current_apps:
+                # `Status.get_units` used as it handles subordinate apps.
+                # `AppStatus.units` always returns empty for subordinates.
+                if app_name in status.apps:
+                    current_units.update(status.get_units(app_name))
 
         if not units:
             return current_units
