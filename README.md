@@ -23,6 +23,8 @@ pytest-jubilant-bdd package include:
   unit, with optional storage pool, size, and count clauses.
 * `add_unit`: A `given` step handler for adding units to a deployed
   application.
+* `consume_offer`: A `given` step handler for consuming a remote offer into
+  a Juju model.
 * `deploy`: A `given` step handler for deploying a charm from Charmhub.
 * `deploy_local`: A `given` step handler for deploying a local `.charm` file
   onto a Juju model.

@@ -376,6 +376,14 @@ def _deploy(
     )
 
 
+@given(flexible("I consume offer '{offer}' [as '{alias}'] " + OPTIONAL_MODEL_CLAUSE))
+def consume_offer(context: Context, offer: str, alias: str | None, model: str | None) -> None:
+    """Consume a remote offer into a model."""
+    juju = context.get_juju(model)
+
+    juju.consume(offer, alias)
+
+
 @given(flexible("I integrate '{app_one}' with '{app_two}' " + OPTIONAL_MODEL_CLAUSE))
 def integrate(context: Context, app_one: str, app_two: str, model: str | None) -> None:
     """Integrate two applications together."""

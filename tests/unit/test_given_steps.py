@@ -34,6 +34,7 @@ from pytest_jubilant_bdd._main import (
     add_machine,
     add_storage,
     add_unit,
+    consume_offer,
     deploy_local,
     disintegrate,
     integrate,
@@ -525,6 +526,38 @@ class TestDeployLocal:
             match=f"Charm not found: '{nonexistent}' is not a file",
         ):
             deploy_local(context, "slurmctld", nonexistent, None, None, 1, None, {})
+
+
+class TestConsumeOffer:
+    """Test the ``consume_offer`` *Given* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Consume offer")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``consume_offer`` with only the required clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "consume",
+            "othermodel.mysql",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Consume offer with all optionals")
+    def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
+        """Test ``consume_offer`` with all optional clauses present."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "consume",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "othermodel.mysql",
+            "sql",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``consume_offer`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            consume_offer(context, "othermodel.mysql", None, "nonexistent")
 
 
 class TestIntegrate:
