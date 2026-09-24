@@ -376,6 +376,20 @@ def _deploy(
     )
 
 
+@given(
+    flexible(
+        "I create offer '{name}' "
+        "from app '{app}' "
+        "and endpoint '{endpoint}' " + OPTIONAL_MODEL_CLAUSE
+    )
+)
+def create_offer(context: Context, name: str, app: str, endpoint: str, model: str | None) -> None:
+    """Create a cross-model offer from a deployed application's endpoint."""
+    juju = context.get_juju(model)
+
+    juju.offer(app, endpoint=endpoint, name=name)
+
+
 @given(flexible("I consume offer '{offer}' [as '{alias}'] " + OPTIONAL_MODEL_CLAUSE))
 def consume_offer(context: Context, offer: str, alias: str | None, model: str | None) -> None:
     """Consume a remote offer into a model."""

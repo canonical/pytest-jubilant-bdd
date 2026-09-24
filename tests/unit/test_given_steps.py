@@ -35,6 +35,7 @@ from pytest_jubilant_bdd._main import (
     add_storage,
     add_unit,
     consume_offer,
+    create_offer,
     deploy_local,
     disintegrate,
     integrate,
@@ -526,6 +527,43 @@ class TestDeployLocal:
             match=f"Charm not found: '{nonexistent}' is not a file",
         ):
             deploy_local(context, "slurmctld", nonexistent, None, None, 1, None, {})
+
+
+class TestCreateOffer:
+    """Test the ``create_offer`` *Given* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Create offer")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``create_offer`` with only the required clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "offer",
+            "mysql:db",
+            "mysql-offer",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Create offer with all optionals")
+    def test_with_optionals(mock_subprocess_run: MagicMock) -> None:
+        """Test ``create_offer`` with all optional clauses present.
+
+        Notes:
+            ``juju offer`` does not accept a ``--model`` flag; jubilant
+            embeds the model in a dotted ``<model>.<app>:<endpoint>``
+            argument instead.
+        """
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "offer",
+            f"test-{MODEL_SUFFIX}.mysql:db",
+            "mysql-offer",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``create_offer`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            create_offer(context, "mysql-offer", "mysql", "db", "nonexistent")
 
 
 class TestConsumeOffer:
