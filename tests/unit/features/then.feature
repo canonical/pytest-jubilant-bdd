@@ -48,3 +48,6 @@ Feature: Reusable `then` steps
 
   Scenario: Storage instances are attached with all optionals
     Then '3' instances of storage 'ost' are attached to unit 'lustre-server/1' in model 'test' within '90' seconds
+
+  Scenario: Wait for a number of seconds
+    Then I wait for '10' seconds

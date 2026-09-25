@@ -20,6 +20,7 @@ __all__ = ["Context"]
 import logging
 import os
 import subprocess
+import time
 from collections.abc import Iterator, Mapping
 from pathlib import Path
 from typing import Any, cast
@@ -782,3 +783,37 @@ def assert_storage_attached(
         ),
         timeout=timeout,
     )
+
+
+_WAIT_STEP = "I wait for '{wait}' seconds"
+
+
+@given(parsers.parse(_WAIT_STEP))
+@when(parsers.parse(_WAIT_STEP))
+@then(parsers.parse(_WAIT_STEP))
+def wait_for(wait: str) -> None:
+    """Pause the current scenario for a fixed number of seconds.
+
+    Args:
+        wait:
+            Number of seconds to pause the scenario for. Fractional values
+            (for example ``'2.5'``) are supported.
+
+    Raises:
+        ValueError: Raised if ``wait`` is not a number or is negative.
+    """
+    try:
+        seconds = float(wait)
+    except ValueError:
+        raise ValueError(
+            f"Invalid wait duration: '{wait}' is not a number. Provide the "
+            "number of seconds to wait for, for example '10' or '2.5'."
+        ) from None
+
+    if seconds < 0:
+        raise ValueError(
+            f"Invalid wait duration: '{wait}' is negative. The number of "
+            "seconds to wait for must be non-negative."
+        )
+
+    time.sleep(seconds)

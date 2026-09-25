@@ -80,6 +80,8 @@ pytest-jubilant-bdd package include:
   the message attached to a workload status, with an optional
   `within '{timeout}' seconds` clause to override the global
   `--juju-bdd-wait-timeout`.
+* `wait_for`: A checkpoint step handler for pausing a scenario for a fixed
+  number of seconds.
 
 Checkpoint assertions are registered for `given`, `when`, and `then` steps
 alike, so they can be used as checkpoints in any stanza of a scenario through

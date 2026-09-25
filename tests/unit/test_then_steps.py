@@ -36,6 +36,7 @@ from pytest_jubilant_bdd._main import (
     assert_storage_attached,
     assert_workload_status,
     assert_workload_status_message,
+    wait_for,
 )
 
 # ruff: enable[SLF001]
@@ -436,3 +437,44 @@ class TestAssertStorageAttached:
 
         with pytest.raises(TimeoutError, match="after 90"):
             assert_storage_attached(context, 99, "ost", "lustre-server/1", None, timeout=90.0)
+
+
+class TestWaitFor:
+    """Test the ``wait_for`` checkpoint step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_THEN_STEP_TESTS, "Wait for a number of seconds")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``wait_for`` with only the required clause.
+
+        Notes:
+            - No assertion is needed. ``time.sleep`` is mocked as a no-op by the
+              autouse ``_mock_time`` fixture. Reaching this point means the
+              Gherkin step parsed and the handler ran without error.
+        """
+
+    def test_sleeps_for_requested_duration(self, mocker: MockerFixture) -> None:
+        """``wait_for`` sleeps for the parsed number of seconds."""
+        mock_sleep = mocker.patch("time.sleep")
+
+        wait_for("10")
+
+        mock_sleep.assert_called_once_with(10.0)
+
+    def test_accepts_fractional_seconds(self, mocker: MockerFixture) -> None:
+        """``wait_for`` accepts fractional durations."""
+        mock_sleep = mocker.patch("time.sleep")
+
+        wait_for("2.5")
+
+        mock_sleep.assert_called_once_with(2.5)
+
+    def test_raises_when_not_a_number(self) -> None:
+        """``wait_for`` raises when the duration is not a number."""
+        with pytest.raises(ValueError, match="'ten' is not a number"):
+            wait_for("ten")
+
+    def test_raises_when_negative(self) -> None:
+        """``wait_for`` raises when the duration is negative."""
+        with pytest.raises(ValueError, match="is negative"):
+            wait_for("-1")
