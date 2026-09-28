@@ -38,6 +38,8 @@ pytest-jubilant-bdd package include:
 * `pack_charm`: A `given` step handler for packing a charm from a
   project directory using ``charmcraft``. Skips packing when the
   ``<APP>_CHARM_PATH`` environment variable is already set.
+* `remove_app`: A `given` step handler for removing one or more
+  applications from a Juju model.
 * `remove_unit`: A `given` step handler for removing one or more units
   from a deployed application.
 * `remove_storage`: A `given` step handler for removing one or more storage

@@ -44,6 +44,7 @@ from pytest_jubilant_bdd._main import (
     is_integrated,
     model_exists,
     pack_charm,
+    remove_app,
     remove_storage,
     remove_unit,
     reset_app_config,
@@ -351,6 +352,87 @@ class TestRemoveStorage:
         """``remove_storage`` raises when the model is not in the context."""
         with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
             remove_storage(context, ["ost/0"], "nonexistent")
+
+
+class TestRemoveApplication:
+    """Test the ``remove_app`` *Given* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove application")
+    def test_required(mock_subprocess_run: MagicMock) -> None:
+        """Test ``remove_app`` with only the required clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "remove-application",
+            "--no-prompt",
+            "slurmctld",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove application in model")
+    def test_in_model(mock_subprocess_run: MagicMock) -> None:
+        """Test ``remove_app`` with the optional model clause.
+
+        Notes:
+            - The ``flexible`` parser matches list elements with any
+              conjunction style, so one multi-application scenario is
+              sufficient.
+        """
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "remove-application",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "--no-prompt",
+            "slurmctld",
+            "slurmd",
+            "mysql",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove application forcibly")
+    def test_forcibly(mock_subprocess_run: MagicMock) -> None:
+        """Test ``remove_app`` with the optional ``forcibly`` clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "remove-application",
+            "--no-prompt",
+            "slurmd",
+            "--force",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove application and destroy storage")
+    def test_with_destroy_storage(mock_subprocess_run: MagicMock) -> None:
+        """Test ``remove_app`` with the optional destroy-storage clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "remove-application",
+            "--no-prompt",
+            "slurmd",
+            "--destroy-storage",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Remove application with all optionals")
+    def test_with_all_optionals(mock_subprocess_run: MagicMock) -> None:
+        """Test ``remove_app`` with every optional clause."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "remove-application",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "--no-prompt",
+            "slurmd",
+            "slurmctld",
+            "--destroy-storage",
+            "--force",
+        ]
+
+    def test_raises_when_model_missing(self, context: Context) -> None:
+        """``remove_app`` raises when the model is not in the context."""
+        with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
+            remove_app(context, ["slurmctld"], "nonexistent")
 
 
 class TestPackCharm:

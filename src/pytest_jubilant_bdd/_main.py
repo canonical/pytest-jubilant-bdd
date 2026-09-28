@@ -196,6 +196,31 @@ def add_storage(
 
 @given(
     flexible(
+        r"%I\s+(?:(?P<force>forcibly)\s+)?remove% "
+        r"%apps? (?P<apps>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
+        " [destroy %(?P<destroy_storage>its|their) storage%] " + OPTIONAL_MODEL_CLAUSE
+    ),
+    converters={
+        "apps": make_list,
+        "force": lambda v: v is not None,
+        "destroy_storage": lambda v: v is not None,
+    },
+)
+def remove_app(
+    context: Context,
+    apps: list[str],
+    model: str | None,
+    force: bool = False,
+    destroy_storage: bool = False,
+) -> None:
+    """Remove one or more applications from a Juju model."""
+    juju = context.get_juju(model)
+
+    juju.remove_application(*apps, destroy_storage=destroy_storage, force=force)
+
+
+@given(
+    flexible(
         r"I remove %units? (?P<units>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
         + OPTIONAL_MODEL_CLAUSE
     ),

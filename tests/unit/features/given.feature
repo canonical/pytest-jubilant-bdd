@@ -106,6 +106,23 @@ Feature: Reusable `given` steps
     Given I add model 'test'
     And I remove storage 'ost/0', 'ost/1', and 'ost/2' in model 'test'
 
+  Scenario: Remove application
+    Given I remove app 'slurmctld'
+
+  Scenario: Remove application in model
+    Given I add model 'test'
+    And I remove apps 'slurmctld', 'slurmd', and 'mysql' in model 'test'
+
+  Scenario: Remove application forcibly
+    Given I forcibly remove app 'slurmd'
+
+  Scenario: Remove application and destroy storage
+    Given I remove app 'slurmd' and destroy its storage
+
+  Scenario: Remove application with all optionals
+    Given I add model 'test'
+    And I forcibly remove apps 'slurmd' and 'slurmctld' in model 'test', and destroy their storage
+
   Scenario: Set app config
     Given I add model 'test'
     Given I deploy 'slurmctld'
