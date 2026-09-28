@@ -525,6 +525,24 @@ def is_deployed(context: Context, app: str, model: str | None) -> None:
         )
 
 
+@given(flexible("application '{app}' exists " + OPTIONAL_MODEL_CLAUSE))
+def app_exists(context: Context, app: str, model: str | None) -> None:
+    """Verify that an application exists in the deployment."""
+    try:
+        context.get_app(app, model=model)
+    except AppNotFoundError:
+        message = f"Application '{app}' does not exist"
+        if model:
+            message += f" in model '{model}'"
+        raise AssertionError(message)
+    except TooManyDeployedAppsError:
+        raise AssertionError(
+            f"More than one app is named '{app}'. Provide the model name in the "
+            f"Gherkin step to check for the existence of a specific app instance. "
+            f"(\"application '{app}' exists in model '<model>'\")"
+        )
+
+
 @given(flexible("unit '{unit}' exists " + OPTIONAL_MODEL_CLAUSE))
 def unit_exists(context: Context, unit: str, model: str | None) -> None:
     """Verify that a unit exists in the deployment."""

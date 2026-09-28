@@ -71,6 +71,14 @@ Feature: Reusable `given` steps
     Given I add model 'test'
     Given 'slurmctld' is deployed in model 'test'
 
+  Scenario: Application exists
+    Given I add model 'test'
+    Given application 'slurmctld' exists
+
+  Scenario: Application exists in model
+    Given I add model 'test'
+    Given application 'slurmctld' exists in model 'test'
+
   Scenario: Unit exists
     Given I add model 'test'
     Given unit 'slurmctld/0' exists

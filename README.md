@@ -23,6 +23,8 @@ pytest-jubilant-bdd package include:
   unit, with optional storage pool, size, and count clauses.
 * `add_unit`: A `given` step handler for adding units to a deployed
   application.
+* `app_exists`: A `given` step handler for asserting that an application
+  currently exists in a Juju model.
 * `create_offer`: A `given` step handler for creating a cross-model offer
   from a deployed application's endpoint.
 * `consume_offer`: A `given` step handler for consuming a remote offer into
