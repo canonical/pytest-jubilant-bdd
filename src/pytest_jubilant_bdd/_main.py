@@ -43,7 +43,7 @@ from ._constants import (
 )
 from ._context import Context
 from ._parsers import flexible, make_dict, make_list
-from .errors import AppNotFoundError, TooManyDeployedAppsError
+from .errors import AppNotFoundError, TooManyDeployedAppsError, UnitNotFoundError
 
 logger = logging.getLogger("pytest-jubilant-bdd")
 
@@ -522,6 +522,32 @@ def is_deployed(context: Context, app: str, model: str | None) -> None:
             f"More than one app is named '{app}'. Provide the model name in the "
             f"Gherkin step to check for the existence of specific app instance. "
             f"(\"'{app}' is deployed in model '<model>'\")"
+        )
+
+
+@given(flexible("unit '{unit}' exists " + OPTIONAL_MODEL_CLAUSE))
+def unit_exists(context: Context, unit: str, model: str | None) -> None:
+    """Verify that a unit exists in the deployment."""
+    app = unit.split("/", maxsplit=1)[0]
+
+    try:
+        context.get_unit(unit, model=model)
+    except AppNotFoundError:
+        message = f"App '{app}' is not deployed"
+        if model:
+            message += f" in model '{model}'"
+        message += f", so unit '{unit}' cannot exist"
+        raise AssertionError(message)
+    except UnitNotFoundError:
+        message = f"Unit '{unit}' does not exist"
+        if model:
+            message += f" in model '{model}'"
+        raise AssertionError(message)
+    except TooManyDeployedAppsError:
+        raise AssertionError(
+            f"More than one app is named '{app}'. Provide the model name in the "
+            f"Gherkin step to check for the existence of a specific unit. "
+            f"(\"unit '{unit}' exists in model '<model>'\")"
         )
 
 

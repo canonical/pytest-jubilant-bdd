@@ -60,6 +60,8 @@ pytest-jubilant-bdd package include:
   option on a Juju model.
 * `switch_model`: A `given` step handler for switching the default model
   that subsequent step handlers operate on.
+* `unit_exists`: A `given` step handler for asserting that a specific unit
+  currently exists in a Juju model.
 * `run_action`: A `when` step handler for running a Juju action on one or
   more units.
 * `run_exec`: A `when` step handler for executing a command on one or more

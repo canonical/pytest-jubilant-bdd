@@ -52,6 +52,7 @@ from pytest_jubilant_bdd._main import (
     set_app_config,
     set_model_config,
     switch_model,
+    unit_exists,
 )
 
 # ruff: enable[SLF001]
@@ -897,6 +898,128 @@ class TestIsDeployed:
             match="'slurmctld' is not deployed in model 'test'",
         ):
             is_deployed(context, "slurmctld", "test")
+
+
+class TestUnitExists:
+    """Test the ``unit_exists`` *Given* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Unit exists")
+    def test_required(
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        mock_status_json: None,
+    ) -> None:
+        """Test ``unit_exists`` with only the required clause.
+
+        Notes:
+            - No assertion is needed. The step handler raises ``AssertionError`` if
+              the unit is missing. Reaching this point means the assertion passed.
+        """
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Unit exists in model")
+    def test_with_optionals(
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        mock_status_json: None,
+    ) -> None:
+        """Test ``unit_exists`` with the ``in model '{model}'`` optional clause.
+
+        Notes:
+            - No assertion is needed. The step handler raises ``AssertionError`` if
+              the unit is missing. Reaching this point means the assertion passed.
+        """
+
+    def test_raises_when_unit_not_found(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+    ) -> None:
+        """``unit_exists`` raises when the app is deployed but the unit is missing."""
+        context.models.add("test")
+        mock_subprocess_run.return_value = MagicMock(
+            stdout=make_status_json({"slurmctld": make_app_without_relation("slurmctld")}),
+            stderr="",
+        )
+
+        with pytest.raises(AssertionError, match="Unit 'slurmctld/1' does not exist"):
+            unit_exists(context, "slurmctld/1", None)
+
+    def test_raises_when_unit_not_found_in_model(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+    ) -> None:
+        """``unit_exists`` raises with model context when the unit is missing."""
+        context.models.add("test")
+        mock_subprocess_run.return_value = MagicMock(
+            stdout=make_status_json({"slurmctld": make_app_without_relation("slurmctld")}),
+            stderr="",
+        )
+
+        with pytest.raises(
+            AssertionError,
+            match="Unit 'slurmctld/1' does not exist in model 'test'",
+        ):
+            unit_exists(context, "slurmctld/1", "test")
+
+    def test_raises_when_app_not_found(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+    ) -> None:
+        """``unit_exists`` raises when the app backing the unit is not deployed."""
+        context.models.add("test")
+        mock_subprocess_run.return_value = MagicMock(
+            stdout=make_status_json(apps={}),
+            stderr="",
+        )
+
+        with pytest.raises(
+            AssertionError,
+            match="App 'slurmctld' is not deployed, so unit 'slurmctld/0' cannot exist",
+        ):
+            unit_exists(context, "slurmctld/0", None)
+
+    def test_raises_when_app_not_found_in_model(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+    ) -> None:
+        """``unit_exists`` raises with model context when the backing app is missing."""
+        context.models.add("test")
+        mock_subprocess_run.return_value = MagicMock(
+            stdout=make_status_json(apps={}),
+            stderr="",
+        )
+
+        with pytest.raises(
+            AssertionError,
+            match="App 'slurmctld' is not deployed in model 'test', "
+            "so unit 'slurmctld/0' cannot exist",
+        ):
+            unit_exists(context, "slurmctld/0", "test")
+
+    def test_raises_when_too_many_apps(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+    ) -> None:
+        """``unit_exists`` raises when the app name is ambiguous across models.
+
+        Both tracked models return the same status payload, so the app name
+        collides and the handler must ask for a model-scoped search.
+        """
+        context.models.add("test")
+        context.models.add("test2")
+        mock_subprocess_run.return_value = MagicMock(
+            stdout=make_status_json({"slurmctld": make_app_without_relation("slurmctld")}),
+            stderr="",
+        )
+
+        with pytest.raises(AssertionError, match="More than one app is named 'slurmctld'"):
+            unit_exists(context, "slurmctld/0", None)
 
 
 class TestIsAppConfigSet:
