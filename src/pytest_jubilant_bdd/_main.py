@@ -289,12 +289,14 @@ def pack_charm(context: Context, app: str, project_dir: str | None) -> None:
         "I deploy '{app}' "
         "[from channel '{channel}'] "
         "[on base '{base}'] "
+        r"[to %machines? (?P<machines>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%] "
         "[with '{num_units}' %units?%] "
         "[with name '{name}'] "
         "[with %constraints?% '{constraints}'] " + OPTIONAL_MODEL_CLAUSE
     ),
     converters={
         "num_units": lambda v: int(v) if v is not None else 1,
+        "machines": lambda v: [str(machine) for machine in make_list(v)],
         "constraints": make_dict,
     },
 )
@@ -304,6 +306,7 @@ def deploy(
     model: str | None,
     channel: str | None,
     base: str | None,
+    machines: list[str] | None,
     num_units: int,
     name: str | None,
     constraints: Mapping[str, Any],
@@ -315,6 +318,7 @@ def deploy(
         model=model,
         channel=channel,
         base=base,
+        machines=machines,
         num_units=num_units,
         name=name,
         constraints=constraints,
@@ -326,6 +330,7 @@ def deploy(
         "I deploy '{app}' from a local charm "
         "[located at '{path}'] "
         "[on base '{base}'] "
+        r"[to %machines? (?P<machines>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%] "
         "[with '{num_units}' %units?%] "
         "[with name '{name}'] "
         "[with %constraints?% '{constraints}'] " + OPTIONAL_MODEL_CLAUSE
@@ -333,6 +338,7 @@ def deploy(
     converters={
         "path": lambda v: Path(v) if v is not None else v,
         "num_units": lambda v: int(v) if v is not None else 1,
+        "machines": lambda v: [str(machine) for machine in make_list(v)],
         "constraints": make_dict,
     },
 )
@@ -342,6 +348,7 @@ def deploy_local(
     path: Path | None,
     model: str | None,
     base: str | None,
+    machines: list[str] | None,
     num_units: int,
     name: str | None,
     constraints: Mapping[str, Any],
@@ -370,6 +377,7 @@ def deploy_local(
         app,
         model=model,
         base=base,
+        machines=machines,
         num_units=num_units,
         name=name,
         constraints=constraints,
@@ -385,6 +393,7 @@ def _deploy(
     model: str | None = None,
     channel: str | None = None,
     base: str | None = None,
+    machines: list[str] | None = None,
     name: str | None = None,
     num_units: int = 1,
     constraints: Mapping[str, Any] | None = None,
@@ -399,6 +408,7 @@ def _deploy(
         channel=channel,
         num_units=num_units,
         constraints=constraints,
+        to=machines,
     )
 
 
