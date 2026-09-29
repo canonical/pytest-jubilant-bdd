@@ -18,8 +18,8 @@ The plugin provides reusable Gherkin step handlers, fixtures, markers, and optio
 for behavior-driven testing of Juju charmed operators.
 """
 
-__all__ = ["Context", "assertions", "flexible", "make_dict", "make_list"]
+__all__ = ["Context", "assertions", "flexible", "make_dict", "make_list", "make_storage_directive"]
 
 from ._assertions import assertions
 from ._context import Context
-from ._parsers import flexible, make_dict, make_list
+from ._parsers import flexible, make_dict, make_list, make_storage_directive

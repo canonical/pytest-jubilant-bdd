@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Unit tests for the ``flexible`` parser."""
+"""Unit tests for the ``flexible`` parser and step converters."""
 
 import pytest
 
-from pytest_jubilant_bdd import flexible
+from pytest_jubilant_bdd import flexible, make_storage_directive
 
 
 class TestFlexible:
@@ -106,3 +106,22 @@ class TestFlexible:
         result = parser.parse_arguments("I add machines on base 'ubuntu@24.04',")
 
         assert result is None
+
+
+class TestMakeStorage:
+    """Test the ``make_storage_directive`` storage-directive converter."""
+
+    def test_raises_when_directive_is_missing_a_separator(self) -> None:
+        """``make_storage_directive`` raises when a directive has no ``=`` separator."""
+        with pytest.raises(ValueError, match="Invalid storage directive: 'osd-standalone'"):
+            make_storage_directive("osd-standalone")
+
+    def test_raises_when_directive_name_is_empty(self) -> None:
+        """``make_storage_directive`` raises when a directive has an empty name."""
+        with pytest.raises(ValueError, match="Invalid storage directive: '=loop,2G,3'"):
+            make_storage_directive("=loop,2G,3")
+
+    def test_raises_when_directive_value_is_empty(self) -> None:
+        """``make_storage_directive`` raises when a directive has an empty value."""
+        with pytest.raises(ValueError, match="storage directive value is empty"):
+            make_storage_directive("osd-standalone=")

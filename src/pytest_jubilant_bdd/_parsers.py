@@ -14,7 +14,7 @@
 
 """Custom ``pytest-bdd`` parsers."""
 
-__all__ = ["flexible", "make_dict", "make_list"]
+__all__ = ["flexible", "make_dict", "make_list", "make_storage_directive"]
 
 import ast
 import re
@@ -214,3 +214,37 @@ def make_list(value: str | None) -> list[Any]:
 
     matches = re.findall(r"'([^']+)'", value)
     return [autocast(match) for match in matches]
+
+
+def make_storage_directive(value: str | None) -> dict[str, str]:
+    """Make a storage-directive mapping from a Gherkin string.
+
+    Args:
+        value:
+            The storage-directive string captured from the Gherkin step,
+            or ``None`` when the storage clause is absent.
+
+    Raises:
+        ValueError:
+            Raised if a directive has no ``=`` separator, or if its name or
+            directive value is empty.
+    """
+    if value is None:
+        return {}
+
+    storage: dict[str, str] = {}
+    for directive in value.split():
+        name, separator, request = directive.partition("=")
+        if not separator or not name:
+            raise ValueError(
+                f"Invalid storage directive: '{directive}'. Storage directives "
+                f"must have the form 'name=directive', for example "
+                f"'osd-standalone=loop,2G,3'."
+            )
+        if not request:
+            raise ValueError(
+                f"Invalid storage directive: '{directive}'. The storage directive value is empty."
+            )
+        storage[name] = request
+
+    return storage

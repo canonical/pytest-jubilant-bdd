@@ -42,7 +42,7 @@ from ._constants import (
     WorkloadStatus,
 )
 from ._context import Context
-from ._parsers import flexible, make_dict, make_list
+from ._parsers import flexible, make_dict, make_list, make_storage_directive
 from .errors import AppNotFoundError, TooManyDeployedAppsError, UnitNotFoundError
 
 logger = logging.getLogger("pytest-jubilant-bdd")
@@ -292,12 +292,14 @@ def pack_charm(context: Context, app: str, project_dir: str | None) -> None:
         r"[to %machines? (?P<machines>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%] "
         "[with '{num_units}' %units?%] "
         "[with name '{name}'] "
-        "[with %constraints?% '{constraints}'] " + OPTIONAL_MODEL_CLAUSE
+        "[with %constraints?% '{constraints}'] "
+        "[with %storage?% '{storage}'] " + OPTIONAL_MODEL_CLAUSE
     ),
     converters={
         "num_units": lambda v: int(v) if v is not None else 1,
         "machines": lambda v: [str(machine) for machine in make_list(v)],
         "constraints": make_dict,
+        "storage": make_storage_directive,
     },
 )
 def deploy(
@@ -310,6 +312,7 @@ def deploy(
     num_units: int,
     name: str | None,
     constraints: Mapping[str, Any],
+    storage: Mapping[str, str],
 ) -> None:
     """Deploy an application from Charmhub."""
     _deploy(
@@ -322,6 +325,7 @@ def deploy(
         num_units=num_units,
         name=name,
         constraints=constraints,
+        storage=storage,
     )
 
 
@@ -333,13 +337,15 @@ def deploy(
         r"[to %machines? (?P<machines>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%] "
         "[with '{num_units}' %units?%] "
         "[with name '{name}'] "
-        "[with %constraints?% '{constraints}'] " + OPTIONAL_MODEL_CLAUSE
+        "[with %constraints?% '{constraints}'] "
+        "[with %storage?% '{storage}'] " + OPTIONAL_MODEL_CLAUSE
     ),
     converters={
         "path": lambda v: Path(v) if v is not None else v,
         "num_units": lambda v: int(v) if v is not None else 1,
         "machines": lambda v: [str(machine) for machine in make_list(v)],
         "constraints": make_dict,
+        "storage": make_storage_directive,
     },
 )
 def deploy_local(
@@ -352,6 +358,7 @@ def deploy_local(
     num_units: int,
     name: str | None,
     constraints: Mapping[str, Any],
+    storage: Mapping[str, str],
 ) -> None:
     """Deploy an application from a local ``*.charm`` file."""
     if path is None:
@@ -381,6 +388,7 @@ def deploy_local(
         num_units=num_units,
         name=name,
         constraints=constraints,
+        storage=storage,
     )
 
 
@@ -397,6 +405,7 @@ def _deploy(
     name: str | None = None,
     num_units: int = 1,
     constraints: Mapping[str, Any] | None = None,
+    storage: Mapping[str, str] | None = None,
 ) -> None:
     """Deploy an application."""
     juju = context.get_juju(model)
@@ -408,6 +417,7 @@ def _deploy(
         channel=channel,
         num_units=num_units,
         constraints=constraints,
+        storage=storage,
         to=machines,
     )
 

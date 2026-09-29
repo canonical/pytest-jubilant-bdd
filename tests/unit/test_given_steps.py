@@ -546,6 +546,10 @@ class TestDeploy:
             "mem=5G",
             "--num-units",
             "3",
+            "--storage",
+            "osd-standalone=loop,2G,3",
+            "--storage",
+            "pgdata=1,1GB",
             "--to",
             "0,1,2",
         ]
@@ -587,6 +591,10 @@ class TestDeployLocal:
             "mem=5G",
             "--num-units",
             "3",
+            "--storage",
+            "osd-standalone=loop,2G,3",
+            "--storage",
+            "pgdata=1,1GB",
             "--to",
             "0,1,2",
         ]
@@ -604,7 +612,7 @@ class TestDeployLocal:
             FileNotFoundError,
             match=f"Charm not found: environment variable '{slurmctld_charm_path}' is not set.",
         ):
-            deploy_local(context, "slurmctld", None, None, None, None, 1, None, {})
+            deploy_local(context, "slurmctld", None, None, None, None, 1, None, {}, {})
 
     def test_raises_when_path_missing(self, context: Context) -> None:
         """``deploy_local`` raises when the supplied path is not a file."""
@@ -614,7 +622,7 @@ class TestDeployLocal:
             FileNotFoundError,
             match=f"Charm not found: '{nonexistent}' is not a file",
         ):
-            deploy_local(context, "slurmctld", nonexistent, None, None, None, 1, None, {})
+            deploy_local(context, "slurmctld", nonexistent, None, None, None, 1, None, {}, {})
 
 
 class TestCreateOffer:
