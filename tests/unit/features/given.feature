@@ -13,7 +13,7 @@ Feature: Reusable `given` steps
 
   Scenario: Deploy with all optionals
     Given I add model 'test'
-    Given I deploy 'slurmctld' in model 'test' from channel 'latest/edge' on base 'ubuntu@24.04' to machines '0', '1', and '2' with '3' units with name 'controller' with constraints 'virt-type=virtual-machine cores=4 mem=5G' with storage 'osd-standalone=loop,2G,3 pgdata=1,1GB'
+    Given I deploy 'slurmctld' in model 'test' from channel 'latest/edge' on base 'ubuntu@24.04' to machines '0', '1', and '2' with '3' units with name 'controller' with config 'host=10.23.0.1 port=8025' with constraints 'virt-type=virtual-machine cores=4 mem=5G' with storage 'osd-standalone=loop,2G,3 pgdata=1,1GB'
 
   Scenario: Deploy local
     Given I add model 'test'
@@ -21,7 +21,7 @@ Feature: Reusable `given` steps
 
   Scenario: Deploy local with all optionals
     Given I add model 'test'
-    Given I deploy 'slurmctld' from a local charm located at '/tmp/fake.charm' in model 'test' on base 'ubuntu@24.04' to machines '0', '1', and '2' with '3' units with name 'controller' with constraints 'virt-type=virtual-machine cores=4 mem=5G' with storage 'osd-standalone=loop,2G,3 pgdata=1,1GB'
+    Given I deploy 'slurmctld' from a local charm located at '/tmp/fake.charm' in model 'test' on base 'ubuntu@24.04' to machines '0', '1', and '2' with '3' units with name 'controller' with config 'host=10.23.0.1 port=8025' with constraints 'virt-type=virtual-machine cores=4 mem=5G' with storage 'osd-standalone=loop,2G,3 pgdata=1,1GB'
 
   Scenario: Create offer
     Given I create offer 'mysql-offer' from app 'mysql' and endpoint 'db'

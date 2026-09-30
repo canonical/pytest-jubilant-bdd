@@ -538,6 +538,10 @@ class TestDeploy:
             "ubuntu@24.04",
             "--channel",
             "latest/edge",
+            "--config",
+            "host=10.23.0.1",
+            "--config",
+            "port=8025",
             "--constraints",
             "virt-type=virtual-machine",
             "--constraints",
@@ -583,6 +587,10 @@ class TestDeployLocal:
             "controller",
             "--base",
             "ubuntu@24.04",
+            "--config",
+            "host=10.23.0.1",
+            "--config",
+            "port=8025",
             "--constraints",
             "virt-type=virtual-machine",
             "--constraints",
@@ -612,7 +620,7 @@ class TestDeployLocal:
             FileNotFoundError,
             match=f"Charm not found: environment variable '{slurmctld_charm_path}' is not set.",
         ):
-            deploy_local(context, "slurmctld", None, None, None, None, 1, None, {}, {})
+            deploy_local(context, "slurmctld", None, None, None, None, 1, None, {}, {}, {})
 
     def test_raises_when_path_missing(self, context: Context) -> None:
         """``deploy_local`` raises when the supplied path is not a file."""
@@ -622,7 +630,7 @@ class TestDeployLocal:
             FileNotFoundError,
             match=f"Charm not found: '{nonexistent}' is not a file",
         ):
-            deploy_local(context, "slurmctld", nonexistent, None, None, None, 1, None, {}, {})
+            deploy_local(context, "slurmctld", nonexistent, None, None, None, 1, None, {}, {}, {})
 
 
 class TestCreateOffer:

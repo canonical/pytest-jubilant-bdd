@@ -292,12 +292,14 @@ def pack_charm(context: Context, app: str, project_dir: str | None) -> None:
         r"[to %machines? (?P<machines>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%] "
         "[with '{num_units}' %units?%] "
         "[with name '{name}'] "
+        "[with config '{config}'] "
         "[with %constraints?% '{constraints}'] "
         "[with %storage?% '{storage}'] " + OPTIONAL_MODEL_CLAUSE
     ),
     converters={
         "num_units": lambda v: int(v) if v is not None else 1,
         "machines": lambda v: [str(machine) for machine in make_list(v)],
+        "config": make_dict,
         "constraints": make_dict,
         "storage": make_storage_directive,
     },
@@ -311,6 +313,7 @@ def deploy(
     machines: list[str] | None,
     num_units: int,
     name: str | None,
+    config: Mapping[str, Any],
     constraints: Mapping[str, Any],
     storage: Mapping[str, str],
 ) -> None:
@@ -324,6 +327,7 @@ def deploy(
         machines=machines,
         num_units=num_units,
         name=name,
+        config=config,
         constraints=constraints,
         storage=storage,
     )
@@ -337,6 +341,7 @@ def deploy(
         r"[to %machines? (?P<machines>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%] "
         "[with '{num_units}' %units?%] "
         "[with name '{name}'] "
+        "[with config '{config}'] "
         "[with %constraints?% '{constraints}'] "
         "[with %storage?% '{storage}'] " + OPTIONAL_MODEL_CLAUSE
     ),
@@ -344,6 +349,7 @@ def deploy(
         "path": lambda v: Path(v) if v is not None else v,
         "num_units": lambda v: int(v) if v is not None else 1,
         "machines": lambda v: [str(machine) for machine in make_list(v)],
+        "config": make_dict,
         "constraints": make_dict,
         "storage": make_storage_directive,
     },
@@ -357,6 +363,7 @@ def deploy_local(
     machines: list[str] | None,
     num_units: int,
     name: str | None,
+    config: Mapping[str, Any],
     constraints: Mapping[str, Any],
     storage: Mapping[str, str],
 ) -> None:
@@ -387,6 +394,7 @@ def deploy_local(
         machines=machines,
         num_units=num_units,
         name=name,
+        config=config,
         constraints=constraints,
         storage=storage,
     )
@@ -404,6 +412,7 @@ def _deploy(
     machines: list[str] | None = None,
     name: str | None = None,
     num_units: int = 1,
+    config: Mapping[str, Any] | None = None,
     constraints: Mapping[str, Any] | None = None,
     storage: Mapping[str, str] | None = None,
 ) -> None:
@@ -416,6 +425,7 @@ def _deploy(
         base=base,
         channel=channel,
         num_units=num_units,
+        config=config,
         constraints=constraints,
         storage=storage,
         to=machines,
