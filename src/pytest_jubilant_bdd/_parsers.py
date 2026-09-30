@@ -82,6 +82,16 @@ _STRIP_PERCENT_SIGN_REGEX = re.compile(r"%(.*?)%")
 Used to strip percent signs before assembling the final regex for matching Gherkin steps.
 """
 
+_AUTOCAST_KEYWORDS = {
+    "true": True,
+    "false": False,
+}
+"""Mapping of Juju values to their Python equivalents.
+
+``ast.literal_eval`` only accepts Python literals like ``True`` and ``False``
+whereas Juju users naturally write booleans in lowercase ``true`` and ``false``.
+"""
+
 
 class flexible(StepParser):  # noqa N802
     """``pytest-bdd`` parser with optional, reorderable clauses encapsulated in brackets.
@@ -195,7 +205,7 @@ def autocast(value: str) -> Any:
     try:
         return ast.literal_eval(value)
     except (ValueError, SyntaxError):
-        return value
+        return _AUTOCAST_KEYWORDS.get(value.lower(), value)
 
 
 def make_dict(value: str | None) -> dict[str, Any]:
