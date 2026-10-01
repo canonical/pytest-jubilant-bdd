@@ -17,6 +17,7 @@
 
 __all__ = ["Context"]
 
+import json
 import logging
 import os
 import subprocess
@@ -89,6 +90,10 @@ def context(request: pytest.FixtureRequest) -> Iterator[Context]:
     context = Context(wait_timeout=cast(float, request.config.getoption(WAIT_TIMEOUT_FLAG_NAME)))
 
     yield context
+
+    if request.session.testsfailed:
+        logs = {model: context.get_juju(model).debug_log(limit=1000) for model in context.models}
+        print(json.dumps(logs, indent=4, sort_keys=True), end="")
 
     if not request.config.getoption(NO_TEARDOWN_FLAG_NAME):
         context.models.destroy(destroy_storage=True, force=True)
