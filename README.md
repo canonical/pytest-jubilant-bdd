@@ -70,6 +70,10 @@ pytest-jubilant-bdd package include:
   machines or units.
 * `run_ssh`: A `when` step handler for SSHing into a machine or unit and
   executing a command.
+* `scp_to_unit`: A `when` step handler for copying a local file or directory onto a
+  deployed unit.
+* `scp_from_unit`: A `when` step handler for copying a file or directory from
+  a deployed unit to the local machine.
 * `assert_all_agent_status`: A checkpoint step handler for asserting the
   status of all agents in one or more models, with an optional
   `within '{timeout}' seconds` clause to override the global

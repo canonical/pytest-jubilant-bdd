@@ -738,6 +738,64 @@ def run_ssh(
     # to "machine" or "unit". Otherwise, this handler will not match the Gherkin step.
 
 
+@when(
+    flexible("I copy '{source}' to unit '{unit}' [at '{remote_path}'] " + OPTIONAL_MODEL_CLAUSE),
+)
+def scp_to_unit(
+    context: Context,
+    source: str,
+    unit: str,
+    remote_path: str | None,
+    model: str | None,
+) -> None:
+    """Copy a local file or directory to a deployed unit.
+
+    Raises:
+        FileNotFoundError: Raised if the local ``source`` path does not exist.
+
+    Notes:
+        - When ``at '{remote_path}'`` is omitted, the file is copied into the
+          remote user's home directory on the unit.
+    """
+    if not Path(source).exists():
+        raise FileNotFoundError(f"Source not found: '{source}' does not exist") from None
+
+    juju = context.get_juju(model)
+
+    if remote_path is None:
+        destination = unit
+    else:
+        destination = f"{unit}:{remote_path}"
+
+    juju.scp(source, destination)
+
+
+@when(
+    flexible(
+        "I copy '{remote_path}' from unit '{unit}' [to '{local_path}'] " + OPTIONAL_MODEL_CLAUSE
+    ),
+)
+def scp_from_unit(
+    context: Context,
+    remote_path: str,
+    unit: str,
+    local_path: str | None,
+    model: str | None,
+) -> None:
+    """Copy a file or directory from a deployed unit to the local machine.
+
+    Notes:
+        - When ``to '{local_path}'`` is omitted, the file is written into
+          the working directory using the basename of the remote path.
+    """
+    juju = context.get_juju(model)
+
+    if local_path is None:
+        local_path = Path(remote_path).name
+
+    juju.scp(f"{unit}:{remote_path}", local_path)
+
+
 # Checkpoint steps - Attestation and verification.
 #
 # Each handler below is registered as a `given`, `when`, and `then` step so

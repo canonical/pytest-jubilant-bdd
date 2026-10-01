@@ -21,9 +21,15 @@ import pytest
 from constants import MODEL_SUFFIX, REUSABLE_WHEN_STEP_TESTS
 from helpers import make_task_json
 from jubilant import Task
+from pyfakefs.fake_filesystem import FakeFilesystem
 from pytest_bdd import scenario
 
 from pytest_jubilant_bdd import Context
+
+# ruff: disable[SLF001]
+from pytest_jubilant_bdd._main import scp_to_unit
+
+# ruff: enable[SLF001]
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -73,6 +79,14 @@ def _mock_failed_command(mock_subprocess_run: MagicMock) -> None:
         stdout=make_task_json("0", status="completed", return_code=2),
         stderr="",
     )
+
+
+@pytest.fixture(scope="function")
+def fake_source_file(fs: FakeFilesystem) -> str:
+    """Create a fake job-script file on the pyfakefs filesystem."""
+    path = "/tmp/sbatch_sleep_job.sh"
+    fs.create_file(path, contents="#!/bin/bash\nsleep 10\n")
+    return path
 
 
 class TestRunAction:
@@ -254,3 +268,68 @@ class TestRunSSH:
         assert call_args[5] == "hostname"
 
         assert len(context.ssh_results) == 1
+
+
+class TestScpToUnit:
+    """Test the ``scp_to_unit`` *When* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file to unit")
+    def test_required(mock_subprocess_run: MagicMock, fake_source_file: str) -> None:
+        """Test ``scp_to_unit`` with only the required clauses."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "scp",
+            "--",
+            fake_source_file,
+            "login/0",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file to unit at remote path in model")
+    def test_with_optionals(mock_subprocess_run: MagicMock, fake_source_file: str) -> None:
+        """Test ``scp_to_unit`` with all optional clauses."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "scp",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "--",
+            fake_source_file,
+            "login/0:/home/ubuntu/sbatch_sleep_job.sh",
+        ]
+
+    def test_raises_when_source_missing(self, context: Context) -> None:
+        """``scp`` raises when the local source path does not exist."""
+        with pytest.raises(FileNotFoundError, match="Source not found: '/does/not/exist'"):
+            scp_to_unit(context, "/does/not/exist", "login/0", None, None)
+
+
+class TestScpFromUnit:
+    """Test the ``scp_from_unit`` *When* step handler."""
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file from unit")
+    def test_required(mock_subprocess_run: MagicMock, fs: FakeFilesystem) -> None:
+        """Test ``scp_from_unit`` with only the required clauses."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "scp",
+            "--",
+            "login/0:/home/ubuntu/sbatch_sleep_job.sh",
+            "sbatch_sleep_job.sh",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file from unit to local path in model")
+    def test_with_optionals(mock_subprocess_run: MagicMock, fs: FakeFilesystem) -> None:
+        """Test ``scp_from_unit`` with all optional clauses."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "scp",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "--",
+            "login/0:/home/ubuntu/sbatch_sleep_job.sh",
+            "testdata/sbatch_sleep_job.sh",
+        ]
