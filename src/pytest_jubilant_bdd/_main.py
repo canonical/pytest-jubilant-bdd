@@ -113,10 +113,12 @@ def add_model(context: Context, model: str) -> None:
     context.models.add(model)
 
 
-@given(
-    flexible("I add '{num_units}' %units?% to app '{app}' " + OPTIONAL_MODEL_CLAUSE),
-    converters={"num_units": int},
-)
+_ADD_UNIT_STEP = "I add '{num_units}' %units?% to app '{app}' " + OPTIONAL_MODEL_CLAUSE
+_ADD_UNIT_CONVERTERS = {"num_units": int}
+
+
+@given(flexible(_ADD_UNIT_STEP), converters=_ADD_UNIT_CONVERTERS)  # type: ignore
+@when(flexible(_ADD_UNIT_STEP), converters=_ADD_UNIT_CONVERTERS)  # type: ignore
 def add_unit(context: Context, num_units: int, app: str, model: str | None) -> None:
     """Add units to a deployed application."""
     juju = context.get_juju(model)
@@ -199,18 +201,20 @@ def add_storage(
     juju.cli("add-storage", unit, f"{storage}={','.join(parts)}")
 
 
-@given(
-    flexible(
-        r"%I\s+(?:(?P<force>forcibly)\s+)?remove% "
-        r"%apps? (?P<apps>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
-        " [destroy %(?P<destroy_storage>its|their) storage%] " + OPTIONAL_MODEL_CLAUSE
-    ),
-    converters={
-        "apps": make_list,
-        "force": lambda v: v is not None,
-        "destroy_storage": lambda v: v is not None,
-    },
+_REMOVE_APP_STEP = (
+    r"%I\s+(?:(?P<force>forcibly)\s+)?remove% "
+    r"%apps? (?P<apps>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
+    " [destroy %(?P<destroy_storage>its|their) storage%] " + OPTIONAL_MODEL_CLAUSE
 )
+_REMOVE_APP_CONVERTERS = {
+    "apps": make_list,
+    "force": lambda v: v is not None,
+    "destroy_storage": lambda v: v is not None,
+}
+
+
+@given(flexible(_REMOVE_APP_STEP), converters=_REMOVE_APP_CONVERTERS)
+@when(flexible(_REMOVE_APP_STEP), converters=_REMOVE_APP_CONVERTERS)
 def remove_app(
     context: Context,
     apps: list[str],
@@ -224,13 +228,14 @@ def remove_app(
     juju.remove_application(*apps, destroy_storage=destroy_storage, force=force)
 
 
-@given(
-    flexible(
-        r"I remove %units? (?P<units>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
-        + OPTIONAL_MODEL_CLAUSE
-    ),
-    converters={"units": make_list},
+_REMOVE_UNIT_STEP = (
+    r"I remove %units? (?P<units>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%" + OPTIONAL_MODEL_CLAUSE
 )
+_REMOVE_UNIT_CONVERTERS = {"units": make_list}
+
+
+@given(flexible(_REMOVE_UNIT_STEP), converters=_REMOVE_UNIT_CONVERTERS)  # type: ignore
+@when(flexible(_REMOVE_UNIT_STEP), converters=_REMOVE_UNIT_CONVERTERS)  # type: ignore
 def remove_unit(context: Context, units: list[str], model: str | None) -> None:
     """Remove one or more units from a deployed application."""
     juju = context.get_juju(model)
@@ -459,7 +464,11 @@ def consume_offer(context: Context, offer: str, alias: str | None, model: str | 
     juju.consume(offer, alias)
 
 
-@given(flexible("I integrate '{app_one}' with '{app_two}' " + OPTIONAL_MODEL_CLAUSE))
+_INTEGRATE_STEP = "I integrate '{app_one}' with '{app_two}' " + OPTIONAL_MODEL_CLAUSE
+
+
+@given(flexible(_INTEGRATE_STEP))
+@when(flexible(_INTEGRATE_STEP))
 def integrate(context: Context, app_one: str, app_two: str, model: str | None) -> None:
     """Integrate two applications together."""
     juju = context.get_juju(model)
@@ -467,7 +476,11 @@ def integrate(context: Context, app_one: str, app_two: str, model: str | None) -
     juju.integrate(app_one, app_two)
 
 
-@given(flexible("I disintegrate '{app_one}' and '{app_two}' " + OPTIONAL_MODEL_CLAUSE))
+_DISINTEGRATE_STEP = "I disintegrate '{app_one}' and '{app_two}' " + OPTIONAL_MODEL_CLAUSE
+
+
+@given(flexible(_DISINTEGRATE_STEP))
+@when(flexible(_DISINTEGRATE_STEP))
 def disintegrate(context: Context, app_one: str, app_two: str, model: str | None) -> None:
     """Disintegrate two applications (remove the relation between them)."""
     juju = context.get_juju(model)

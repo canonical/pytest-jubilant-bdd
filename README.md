@@ -21,7 +21,7 @@ pytest-jubilant-bdd package include:
   testing context.
 * `add_storage`: A `given` step handler for adding storage to a deployed
   unit, with optional storage pool, size, and count clauses.
-* `add_unit`: A `given` step handler for adding units to a deployed
+* `add_unit`: A `given`/`when` step handler for adding units to a deployed
   application.
 * `app_exists`: A `given` step handler for asserting that an application
   currently exists in a Juju model.
@@ -32,17 +32,18 @@ pytest-jubilant-bdd package include:
 * `deploy`: A `given` step handler for deploying a charm from Charmhub.
 * `deploy_local`: A `given` step handler for deploying a local `.charm` file
   onto a Juju model.
-* `disintegrate`: A `given` step handler for removing the integration
+* `disintegrate`: A `given`/`when` step handler for removing the integration
   between two Juju applications.
-* `integrate`: A `given` step handler for integrating two Juju applications.
+* `integrate`: A `given`/`when` step handler for integrating two Juju
+  applications.
 * `model_exists`: A `given` step handler for asserting that a Juju model
   currently exists.
 * `pack_charm`: A `given` step handler for packing a charm from a
   project directory using ``charmcraft``. Skips packing when the
   ``<APP>_CHARM_PATH`` environment variable is already set.
-* `remove_app`: A `given` step handler for removing one or more
+* `remove_app`: A `given`/`when` step handler for removing one or more
   applications from a Juju model.
-* `remove_unit`: A `given` step handler for removing one or more units
+* `remove_unit`: A `given`/`when` step handler for removing one or more units
   from a deployed application.
 * `remove_storage`: A `given` step handler for removing one or more storage
   instances from a Juju model.
