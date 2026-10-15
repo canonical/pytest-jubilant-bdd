@@ -127,7 +127,22 @@ unit tests for code paths that are impossible to reach in production.
 6. Typecheck: `just typecheck` (uses `pyright`). Fix all typing
    errors. If a typing issue is in production code, follow the
    human-in-the-loop protocol in the Code style section above.
-7. Repeat for each new or modified file.
+7. Update the `bdd-test-author` skill if the change affects anything it
+   documents. The skill at `.agents/skills/bdd-test-author/` mirrors the
+   plugin's shipped behavior and must stay in sync with the codebase:
+
+   - New, changed, or removed step handlers → the phrasing table and
+     notes in `reference.md`, the built-in step reference key facts in
+     `SKILL.md` (checkpoint handlers, dual `Given`/`When` registration),
+     and the walkthroughs in `examples.md`.
+   - `Context` API, public API, CLI option, or framework behavior
+     changes → the "pytest-jubilant-bdd framework facts" and "Context
+     API essentials for custom steps" sections in `reference.md`.
+
+   Handler changes also require updating the handler list in `README.md`
+   (see the `reusable-step-handler` skill at
+   `.agents/skills/reusable-step-handler/SKILL.md`).
+8. Repeat for each new or modified file.
 
 Pipe the output of shell commands to either `head` or `tail` to
 capture the `stdout` and/or `stderr`.
