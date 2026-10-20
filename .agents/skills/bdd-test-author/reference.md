@@ -383,7 +383,7 @@ repos:
         name: Check test plans against generated feature files
         entry: just gherkinator diff
         language: system
-        files: '^tests/integration/(features|plans)/[^/]*\.(ya?ml|.feature)$'
+        files: '^tests/integration/(features|plans)/[^/]*\.(ya?ml|feature)$'
         pass_filenames: false
 ```
 
