@@ -31,6 +31,8 @@ files, and writing custom steps where the built-in handlers fall short.
 - Running or troubleshooting the `gherkinator` CLI itself — use the
   `gherkinator-cli` skill at
   https://github.com/canonical/gherkinator/tree/main/.agents/skills/gherkinator-cli.
+- Migrating an existing (non-BDD) jubilant test suite to BDD — use
+  `bdd-test-migrator`.
 
 ## Non-negotiable rules
 
