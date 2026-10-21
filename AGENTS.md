@@ -142,7 +142,24 @@ unit tests for code paths that are impossible to reach in production.
    Handler changes also require updating the handler list in `README.md`
    (see the `reusable-step-handler` skill at
    `.agents/skills/reusable-step-handler/SKILL.md`).
-8. Repeat for each new or modified file.
+8. Update the `bdd-test-migrator` skill if the change affects anything it
+   documents. The skill at `.agents/skills/bdd-test-migrator/` mirrors the
+   plugin's shipped behavior and must stay in sync with the codebase. Its
+   shared sections (YAML test plan schema, built-in step phrasing table,
+   framework facts, execution ordering, wiring files, feature file
+   management, and `Context` API essentials) are kept verbatim identical
+   to the `bdd-test-author` skill -- apply any change to both skills:
+
+   - New, changed, or removed step handlers → the phrasing table and
+     notes in `reference.md`, the built-in step reference key facts in
+     `SKILL.md`, and the migration walkthroughs in `examples.md` that
+     use the affected steps.
+   - `Context` API, public API, CLI option, or framework behavior
+     changes → the "pytest-jubilant-bdd framework facts", "Context API
+     essentials for custom steps", and pattern-mapping sections in
+     `reference.md`.
+
+9. Repeat for each new or modified file.
 
 Pipe the output of shell commands to either `head` or `tail` to
 capture the `stdout` and/or `stderr`.
