@@ -26,12 +26,14 @@ from constants import MODEL_SUFFIX, REUSABLE_GIVEN_STEP_TESTS
 from helpers import make_app_without_relation, make_status_json
 from pyfakefs.fake_filesystem import FakeFilesystem
 from pytest_bdd import scenario
+from pytest_mock import MockerFixture
 
 from pytest_jubilant_bdd import Context
 
 # ruff: disable[SLF001]
 from pytest_jubilant_bdd._main import (
     add_machine,
+    add_model,
     add_storage,
     add_unit,
     app_exists,
@@ -168,6 +170,73 @@ class TestAddModel:
             model,
         ]
         assert model in context.models
+
+    def test_cloudinit_userdata_is_set(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        fs: FakeFilesystem,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test ``add_model`` when ``<MODEL>_MODEL_CLOUDINIT_USERDATA`` is set."""
+        cloudinit_userdata = "/tmp/cloudinit-userdata.yaml"
+        fs.create_file("/tmp/cloudinit-userdata.yaml", contents="ppa: slurm-wlm")
+        monkeypatch.setenv("TEST_MODEL_CLOUDINIT_USERDATA", cloudinit_userdata)
+
+        add_model(context, "test")
+
+        model_config_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][1] == "model-config"
+        ]
+        assert len(model_config_calls) == 1
+        assert model_config_calls[0].args[0] == [
+            "juju",
+            "model-config",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "cloudinit-userdata=ppa: slurm-wlm",
+        ]
+
+    def test_cloudinit_userdata_is_set_but_is_not_a_file(
+        self,
+        context: Context,
+        mock_subprocess_run: MagicMock,
+        fs: FakeFilesystem,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Test ``add_model`` when ``<MODEL>_MODEL_CLOUDINIT_USERDATA`` is set but not a file."""
+        bad_cloudinit_userdata = "/tmp/config"
+        fs.create_dir(bad_cloudinit_userdata)
+        monkeypatch.setenv("TEST_MODEL_CLOUDINIT_USERDATA", bad_cloudinit_userdata)
+
+        add_model(context, "test")
+
+        assert (
+            "'TEST_MODEL_CLOUDINIT_USERDATA' is set but '/tmp/config' is not a file"
+            in caplog.messages
+        )
+
+    def test_cloudinit_userdata_is_set_but_is_unreable(
+        self,
+        context,
+        mock_subprocess_run: MagicMock,
+        fs: FakeFilesystem,
+        monkeypatch: pytest.MonkeyPatch,
+        mocker: MockerFixture,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Test ``add_model`` when ``<MODEL>_MODEL_CLOUDINIT_USERDATA`` is set but is invalid."""
+        bad_cloudinit_userdata = "/tmp/cloudinit-userdata.yaml"
+        fs.create_file(bad_cloudinit_userdata)
+        monkeypatch.setenv("TEST_MODEL_CLOUDINIT_USERDATA", bad_cloudinit_userdata)
+        mocker.patch("pathlib.Path.read_text", side_effect=PermissionError())
+
+        add_model(context, "test")
+
+        assert "failed to read '/tmp/cloudinit-userdata.yaml'" in caplog.messages
 
 
 class TestAddUnit:
