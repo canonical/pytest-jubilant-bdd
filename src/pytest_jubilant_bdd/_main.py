@@ -112,6 +112,26 @@ def add_model(context: Context, model: str) -> None:
     """Add a new model."""
     context.models.add(model)
 
+    env_var = model.upper().replace("-", "_") + "_MODEL_CLOUDINIT_USERDATA"
+    cloudinit_userdata = Path(os.getenv(env_var, default=""))
+    if cloudinit_userdata.is_file():
+        logger.info(
+            "setting `cloudinit-userdata` for model '%s': '%s' is set to '%s'",
+            model,
+            env_var,
+            cloudinit_userdata,
+        )
+
+        try:
+            context.models[model].model_config(
+                {"cloudinit-userdata": cloudinit_userdata.read_text()}
+            )
+        except OSError as e:
+            logger.warning("failed to read '%s'", cloudinit_userdata)
+            logger.debug(e)
+    else:
+        logger.warning("'%s' is set but '%s' is not a file", env_var, cloudinit_userdata)
+
 
 _ADD_UNIT_STEP = "I add '{num_units}' %units?% to app '{app}' " + OPTIONAL_MODEL_CLAUSE
 _ADD_UNIT_CONVERTERS = {"num_units": int}
