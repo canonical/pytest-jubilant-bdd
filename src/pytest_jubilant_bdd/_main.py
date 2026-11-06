@@ -20,6 +20,7 @@ __all__ = ["Context"]
 import json
 import logging
 import os
+import shlex
 import subprocess
 import time
 from collections.abc import Iterator, Mapping
@@ -107,10 +108,53 @@ def context(request: pytest.FixtureRequest) -> Iterator[Context]:
 # Given steps - Setup and context building
 
 
-@given(parsers.parse("I add model '{model}'"))
-def add_model(context: Context, model: str) -> None:
-    """Add a new model."""
+@given(flexible("I add model '{model}' [with constraints '{constraints}']"))
+def add_model(context: Context, model: str, constraints: str | None) -> None:
+    """Add a new model.
+
+    The optional ``with constraints`` clause applies Juju constraints to the
+    model. Constraint values support ``{name}`` format placeholders that are
+    resolved from the testing context's ``scenario_state`` mapping, which
+    steps can populate to share values (for example, the host architecture)
+    with later steps.
+
+    Args:
+        context: The testing context.
+        model: Name of the new model.
+        constraints: Juju constraints to apply to the model, if provided.
+
+    Notes:
+        Constraints are applied after model creation because ``jubilant``
+        does not support passing them to ``add-model``. This matters for
+        Charmhub deployments: without an explicit architecture constraint,
+        Juju resolves charms for the default ``amd64`` platform regardless
+        of the underlying machine, which fails on non-amd64 runners.
+
+    Raises:
+        ValueError: If a constraint placeholder is not present in the
+            scenario state, or if the resolved constraints are empty.
+    """
+    resolved_constraints = None
+    if constraints is not None:
+        try:
+            resolved_constraints = constraints.format_map(context.scenario_state)
+        except KeyError as e:
+            missing = e.args[0] if e.args else constraints
+            raise ValueError(
+                f"Constraint variable '{missing}' not found in the scenario state. "
+                f"Store it with a scenario step before adding the model."
+            ) from None
+
+        if not resolved_constraints.strip():
+            raise ValueError(
+                f"Resolved constraints for model '{model}' are empty: '{constraints}'"
+            )
+
     context.models.add(model)
+
+    if resolved_constraints is not None:
+        juju = context.get_juju(model)
+        juju.cli("set-model-constraints", *shlex.split(resolved_constraints))
 
     env_var = model.upper().replace("-", "_") + "_MODEL_CLOUDINIT_USERDATA"
     cloudinit_userdata = Path(os.getenv(env_var, default=""))
