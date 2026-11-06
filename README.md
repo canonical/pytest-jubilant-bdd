@@ -18,7 +18,9 @@ pytest-jubilant-bdd package include:
 * `add_machine`: A `given` step handler for adding one or more machines to a
   Juju model.
 * `add_model`: A `given` step handler for adding a new Juju model to the
-  testing context.
+  testing context, with an optional `with constraints` clause. Constraint
+  values support `{name}` placeholders resolved from the testing context's
+  scenario state.
 * `add_storage`: A `given` step handler for adding storage to a deployed
   unit, with optional storage pool, size, and count clauses.
 * `add_unit`: A `given`/`when` step handler for adding units to a deployed

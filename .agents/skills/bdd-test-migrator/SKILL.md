@@ -304,8 +304,11 @@ status on your own initiative to make a suite pass.
 ### Multi-model tests
 
 Use `Given I add model '<name>'` + `Given I switch to model '<name>'` for the
-default, and scope individual steps with `in model '<name>'` clauses. See the
-multi-model example in [examples.md](examples.md).
+default, and scope individual steps with `in model '<name>'` clauses. When a
+model needs Juju constraints (for example, `arch={arch}` on multi-architecture
+runners), use `Given I add model '<name>' with constraints '<constraints>'` —
+constraint values support `{name}` placeholders resolved from the scenario
+state. See the multi-model example in [examples.md](examples.md).
 
 ## Built-in step reference
 

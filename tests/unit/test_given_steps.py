@@ -183,7 +183,7 @@ class TestAddModel:
         fs.create_file("/tmp/cloudinit-userdata.yaml", contents="ppa: slurm-wlm")
         monkeypatch.setenv("TEST_MODEL_CLOUDINIT_USERDATA", cloudinit_userdata)
 
-        add_model(context, "test")
+        add_model(context, "test", None)
 
         model_config_calls = [
             call
@@ -212,7 +212,7 @@ class TestAddModel:
         fs.create_dir(bad_cloudinit_userdata)
         monkeypatch.setenv("TEST_MODEL_CLOUDINIT_USERDATA", bad_cloudinit_userdata)
 
-        add_model(context, "test")
+        add_model(context, "test", None)
 
         assert (
             "'TEST_MODEL_CLOUDINIT_USERDATA' is set but '/tmp/config' is not a file"
@@ -234,9 +234,105 @@ class TestAddModel:
         monkeypatch.setenv("TEST_MODEL_CLOUDINIT_USERDATA", bad_cloudinit_userdata)
         mocker.patch("pathlib.Path.read_text", side_effect=PermissionError())
 
-        add_model(context, "test")
+        add_model(context, "test", None)
 
         assert "failed to read '/tmp/cloudinit-userdata.yaml'" in caplog.messages
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Add model with constraints")
+    def test_with_constraints(context: Context, mock_subprocess_run: MagicMock) -> None:
+        """Test ``add_model`` with the optional constraints clause."""
+        model = f"test-{MODEL_SUFFIX}"
+
+        assert model in context.models
+        set_model_constraints_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][1] == "set-model-constraints"
+        ]
+        assert len(set_model_constraints_calls) == 1
+        assert set_model_constraints_calls[0].args[0] == [
+            "juju",
+            "set-model-constraints",
+            "--model",
+            model,
+            "arch=amd64",
+            "mem=4G",
+        ]
+
+    def test_with_constraints_from_scenario_state(
+        self, context: Context, mock_subprocess_run: MagicMock
+    ) -> None:
+        """``add_model`` resolves constraint placeholders from the scenario state.
+
+        Notes:
+            This test calls the handler directly rather than via ``@scenario``
+            because the scenario state must be seeded before the handler runs,
+            and ``@scenario`` executes the Gherkin steps before the test body.
+        """
+        context.scenario_state["arch"] = "arm64"
+
+        add_model(context, "test", "arch={arch} mem=4G")
+
+        model = f"test-{MODEL_SUFFIX}"
+
+        assert model in context.models
+        set_model_constraints_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][1] == "set-model-constraints"
+        ]
+        assert len(set_model_constraints_calls) == 1
+        assert set_model_constraints_calls[0].args[0] == [
+            "juju",
+            "set-model-constraints",
+            "--model",
+            model,
+            "arch=arm64",
+            "mem=4G",
+        ]
+
+    def test_raises_when_variable_missing(
+        self, context: Context, mock_subprocess_run: MagicMock
+    ) -> None:
+        """``add_model`` raises when a constraint placeholder is unresolved.
+
+        Notes:
+            This error path is tested by calling the handler directly rather
+            than via ``@scenario`` because ``@scenario`` runs the Gherkin
+            steps before the test body, so exceptions raised during step
+            execution cannot be caught with ``pytest.raises`` in the body.
+        """
+        with pytest.raises(ValueError, match="'cluster' not found in the scenario state"):
+            add_model(context, "test", "arch={cluster}")
+
+        add_model_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][1] == "add-model"
+        ]
+        assert len(add_model_calls) == 0
+
+    def test_raises_when_resolved_constraints_empty(
+        self, context: Context, mock_subprocess_run: MagicMock
+    ) -> None:
+        """``add_model`` raises when constraint resolution yields nothing.
+
+        Notes:
+            This error path is tested by calling the handler directly rather
+            than via ``@scenario`` because ``@scenario`` runs the Gherkin
+            steps before the test body, so exceptions raised during step
+            execution cannot be caught with ``pytest.raises`` in the body.
+        """
+        with pytest.raises(ValueError, match="Resolved constraints for model 'test' are empty"):
+            add_model(context, "test", "")
+
+        add_model_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][1] == "add-model"
+        ]
+        assert len(add_model_calls) == 0
 
 
 class TestAddUnit:

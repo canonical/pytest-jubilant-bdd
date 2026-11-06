@@ -2,6 +2,9 @@ Feature: Reusable `given` steps
   Scenario: Add model
     Given I add model 'test'
 
+  Scenario: Add model with constraints
+    Given I add model 'test' with constraints 'arch=amd64 mem=4G'
+
   Scenario: Pack charm
     Given I pack a 'my-charm' charm
 
