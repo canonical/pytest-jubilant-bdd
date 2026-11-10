@@ -55,6 +55,8 @@ pytest-jubilant-bdd package include:
   are currently integrated.
 * `is_deployed`: A `given` step handler for asserting that an application is
   currently deployed on a Juju model.
+* `is_env_var_set`: A `given` step handler for asserting that a required
+  environment variable is set (and not empty) in the test environment.
 * `reset_app_config`: A `given` step handler for resetting a configuration
   option on a deployed application to its default.
 * `reset_model_config`: A `given` step handler for resetting a model

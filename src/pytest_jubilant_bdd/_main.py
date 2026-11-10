@@ -687,6 +687,28 @@ def unit_exists(context: Context, unit: str, model: str | None) -> None:
         )
 
 
+@given(parsers.parse("environment variable '{env_var}' is set"))
+def is_env_var_set(context: Context, env_var: str) -> None:
+    """Verify that a required environment variable is set in the test environment.
+
+    Notes:
+      - An environment variable that is present but has no value is treated as not set.
+    """
+    value = os.environ.get(env_var)
+    if value is None:
+        raise AssertionError(
+            f"Environment variable '{env_var}' is not set. "
+            f"Export '{env_var}' in the environment running the tests "
+            f"(for example, 'export {env_var}=...') before invoking pytest."
+        )
+    if not value:
+        raise AssertionError(
+            f"Environment variable '{env_var}' is set to an empty value. "
+            f"Export '{env_var}' with a non-empty value in the environment "
+            f"running the tests before invoking pytest."
+        )
+
+
 @given(flexible("I reset '{option}' for app '{app}' " + OPTIONAL_MODEL_CLAUSE))
 def reset_app_config(
     context: Context,
