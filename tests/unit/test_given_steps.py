@@ -16,7 +16,7 @@
 """Unit tests for reusable *Given* Gherkin steps."""
 
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import cast
 from unittest.mock import MagicMock
@@ -54,6 +54,7 @@ from pytest_jubilant_bdd._main import (
     reset_model_config,
     set_app_config,
     set_model_config,
+    store_host_architecture,
     switch_model,
     unit_exists,
 )
@@ -1517,3 +1518,51 @@ class TestSwitchModel:
         """``switch_model`` raises when the model is not in the context."""
         with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
             switch_model(context, "nonexistent")
+
+
+class TestStoreHostArchitecture:
+    """Test the ``store_host_architecture`` *Given* step handler."""
+
+    @pytest.fixture(autouse=True)
+    def _mock_machine(self, mocker: MockerFixture) -> None:
+        """Mock ``platform.machine`` for determinism across runner architectures."""
+        mocker.patch("pytest_jubilant_bdd._main.platform.machine", return_value="x86_64")
+
+    @pytest.fixture(autouse=True)
+    def _clear_scenario_state(self, context: Context) -> Iterator[None]:
+        """Clear the session-scoped scenario state before and after each test."""
+        context.scenario_state.clear()
+        yield
+        context.scenario_state.clear()
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Store host architecture")
+    def test_required(context: Context) -> None:
+        """Test ``store_host_architecture`` stores the mapped Juju architecture."""
+        # ``x86_64`` (from the autouse mock) maps to the Juju name ``amd64``.
+        assert context.scenario_state["arch"] == "amd64"
+
+    def test_maps_arm64(
+        self,
+        context: Context,
+        mocker: MockerFixture,
+    ) -> None:
+        """``store_host_architecture`` maps ``aarch64`` to the Juju name ``arm64``."""
+        mocker.patch("pytest_jubilant_bdd._main.platform.machine", return_value="aarch64")
+
+        store_host_architecture(context, "arch")
+
+        assert context.scenario_state["arch"] == "arm64"
+
+    def test_passthrough_unknown_machine(
+        self,
+        context: Context,
+        mocker: MockerFixture,
+    ) -> None:
+        """``store_host_architecture`` passes unknown machine values through normalized."""
+        mocker.patch("pytest_jubilant_bdd._main.platform.machine", return_value="RISCV64")
+
+        store_host_architecture(context, "arch")
+
+        # Unknown values are lowercased and underscore-normalized but not mapped.
+        assert context.scenario_state["arch"] == "riscv64"

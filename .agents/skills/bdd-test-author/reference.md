@@ -80,6 +80,7 @@ handler is registered under.
 | Step phrasing | Handler | Stanzas |
 |---------------|---------|---------|
 | `I add model '{model}' [with constraints '{constraints}']` | `add_model` | Given |
+| `I store the host architecture as '{arch}'` | `store_host_architecture` | Given |
 | `I add '{n}' unit[s] to app '{app}' [in model '{model}']` | `add_unit` | Given, When |
 | `I add [a|'{n}'] machine[s] [to '{target}'] [(that )?use[s] base '{base}'] [with constraints '{constraints}'] [with disks '{disks}'] [in model '{model}']` | `add_machine` | Given |
 | `I add storage '{storage}' to unit '{unit}' [from pool '{pool}'] [of size '{size}'] [with '{count}' instance[s]] [in model '{model}']` | `add_storage` | Given |
@@ -146,6 +147,9 @@ Notes:
   directives of the form `name=directive` (for example `'data=1G'` or
   `'osd-standalone=loop,2G,3'`).
 - `add_machine` cannot be used with Kubernetes clouds.
+- `store_host_architecture` maps `platform.machine()` output to Juju
+  architecture names (`x86_64` → `amd64`, `aarch64` → `arm64`); unknown
+  values pass through lowercased with underscores replaced by hyphens.
 - `pack_charm` skips `charmcraft pack` when the `<APP>_CHARM_PATH`
   environment variable is set; `deploy_local` reads the same environment
   variable when `located at '{path}'` is omitted.
@@ -444,7 +448,7 @@ The essentials:
 | `context.action_results` | `stack[Task]` — results of `When I run action ...` |
 | `context.exec_results` | `stack[Task]` — results of `When I execute ...` |
 | `context.ssh_results` | `stack[str]` — stdout of `When I ssh into ... and I execute ...` |
-| `context.scenario_state` | `dict[str, Any]` — share arbitrary values between steps. Referenced by `{name}` placeholders in `I add model ... with constraints ...`. |
+| `context.scenario_state` | `dict[str, Any]` — share arbitrary values between steps of a scenario. |
 | `context.wait(ready=lambda ctx: ..., timeout=...)` | Poll until `ready` returns `True` 3× consecutively. Raises `TimeoutError` on timeout. Pass `timeout=<seconds>` to override the global `--juju-bdd-wait-timeout` for a single wait. |
 | `context.models` | `ModelMapping` of models added via `Given I add model ...` |
 | `context.default_model` | Set via `Given I switch to model ...` |

@@ -20,6 +20,7 @@ __all__ = ["Context"]
 import json
 import logging
 import os
+import platform
 import shlex
 import subprocess
 import time
@@ -113,10 +114,8 @@ def add_model(context: Context, model: str, constraints: str | None) -> None:
     """Add a new model.
 
     The optional ``with constraints`` clause applies Juju constraints to the
-    model. Constraint values support ``{name}`` format placeholders that are
-    resolved from the testing context's ``scenario_state`` mapping, which
-    steps can populate to share values (for example, the host architecture)
-    with later steps.
+    model. Constraint values support ``{arch}`` format placeholders that are
+    resolved from the testing context's ``scenario_state`` mapping.
 
     Args:
         context: The testing context.
@@ -175,6 +174,23 @@ def add_model(context: Context, model: str, constraints: str | None) -> None:
             logger.debug(e)
     else:
         logger.warning("'%s' is set but '%s' is not a file", env_var, cloudinit_userdata)
+
+
+@given(parsers.parse("I store the host architecture as '{arch}'"))
+def store_host_architecture(context: Context, arch: str) -> None:
+    """Store the host architecture in the scenario state under ``arch``.
+
+    The stored architecture uses Debian architecture names, so it can be used
+    for setting up model configurations, constraints, package configurations,
+    etc.
+
+    Args:
+        context: The testing context.
+        arch: Key under which to store the architecture.
+    """
+    machine = platform.machine().lower().replace("_", "-")
+    mapped_arch = {"x86-64": "amd64", "aarch64": "arm64"}.get(machine, machine)
+    context.scenario_state[arch] = mapped_arch
 
 
 _ADD_UNIT_STEP = "I add '{num_units}' %units?% to app '{app}' " + OPTIONAL_MODEL_CLAUSE
