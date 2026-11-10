@@ -127,6 +127,7 @@ handler is registered under.
 | `'{app}' is deployed [in model '{model}']` | `is_deployed` | Given |
 | `application '{app}' exists [in model '{model}']` | `app_exists` | Given |
 | `unit '{unit}' exists [in model '{model}']` | `unit_exists` | Given |
+| `environment variable '{env_var}' is set` | `is_env_var_set` | Given |
 | `I reset '{option}' for app '{app}' [in model '{model}']` | `reset_app_config` | Given |
 | `I set '{option}' for app '{app}' to '{value}' [in model '{model}']` | `set_app_config` | Given |
 | `I set '{option}' for model '{model}' to '{value}'` | `set_model_config` | Given |

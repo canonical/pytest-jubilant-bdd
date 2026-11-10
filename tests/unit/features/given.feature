@@ -90,6 +90,9 @@ Feature: Reusable `given` steps
     Given I add model 'test'
     Given unit 'slurmctld/0' exists in model 'test'
 
+  Scenario: Environment variable is set
+    Given environment variable 'AZURE_CLIENT_ID' is set
+
   Scenario: Add unit
     Given I add '3' units to app 'slurmctld'
 

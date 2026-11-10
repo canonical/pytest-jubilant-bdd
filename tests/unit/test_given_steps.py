@@ -44,6 +44,7 @@ from pytest_jubilant_bdd._main import (
     integrate,
     is_app_config_set,
     is_deployed,
+    is_env_var_set,
     is_integrated,
     model_exists,
     pack_charm,
@@ -1295,6 +1296,54 @@ class TestUnitExists:
 
         with pytest.raises(AssertionError, match="More than one app is named 'slurmctld'"):
             unit_exists(context, "slurmctld/0", None)
+
+
+class TestIsEnvVarSet:
+    """Test the ``is_env_var_set`` *Given* step handler."""
+
+    @pytest.fixture(autouse=True)
+    def _set_required_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Set ``AZURE_CLIENT_ID`` before the Gherkin steps run.
+
+        Fixture setup happens before ``@scenario`` executes the Gherkin
+        steps, so the happy-path scenario sees the variable as set.
+        """
+        monkeypatch.setenv("AZURE_CLIENT_ID", "fake-client-id")
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Environment variable is set")
+    def test_when_env_var_is_set() -> None:
+        """Test ``is_env_var_set`` when the environment variable is set.
+
+        Notes:
+            - No assertion is needed. The step handler raises ``AssertionError``
+              if the variable is missing or empty. Reaching this point means the
+              check passed.
+        """
+
+    def test_raises_when_env_var_missing(
+        self, context: Context, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """``is_env_var_set`` raises when the environment variable is not set."""
+        monkeypatch.delenv("AZURE_CLIENT_ID", raising=False)
+
+        with pytest.raises(
+            AssertionError,
+            match="Environment variable 'AZURE_CLIENT_ID' is not set",
+        ):
+            is_env_var_set(context, "AZURE_CLIENT_ID")
+
+    def test_raises_when_env_var_empty(
+        self, context: Context, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """``is_env_var_set`` raises when the environment variable is empty."""
+        monkeypatch.setenv("AZURE_CLIENT_ID", "")
+
+        with pytest.raises(
+            AssertionError,
+            match="Environment variable 'AZURE_CLIENT_ID' is set to an empty value",
+        ):
+            is_env_var_set(context, "AZURE_CLIENT_ID")
 
 
 class TestIsAppConfigSet:
