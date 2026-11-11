@@ -23,7 +23,7 @@ import os
 import shlex
 import subprocess
 import time
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from pathlib import Path
 from typing import Any, cast
 
@@ -920,7 +920,9 @@ _WORKLOAD_STATUS_STEP = (
     r"%the workload status for (?P<type_>app|unit) '(?P<target>[^']+)'%"
     rf" is %'{WORKLOAD_STATUS_CAPTURE_GROUP}'% " + OPTIONAL_TIMEOUT_CLAUSE
 )
-_WORKLOAD_STATUS_CONVERTERS = {"timeout": lambda v: float(v) if v is not None else None}
+_WORKLOAD_STATUS_CONVERTERS: dict[str, Callable[[str], object]] = {
+    "timeout": lambda v: float(v) if v is not None else None
+}
 
 
 @given(flexible(_WORKLOAD_STATUS_STEP), converters=_WORKLOAD_STATUS_CONVERTERS)
@@ -954,7 +956,9 @@ _WORKLOAD_STATUS_MESSAGE_STEP = (
     r"%the workload status message for (?P<type_>app|unit) '(?P<target>[^']+)'%"
     r" is %'(?P<message>[^']*)'% " + OPTIONAL_TIMEOUT_CLAUSE
 )
-_WORKLOAD_STATUS_MESSAGE_CONVERTERS = {"timeout": lambda v: float(v) if v is not None else None}
+_WORKLOAD_STATUS_MESSAGE_CONVERTERS: dict[str, Callable[[str], object]] = {
+    "timeout": lambda v: float(v) if v is not None else None
+}
 
 
 @given(flexible(_WORKLOAD_STATUS_MESSAGE_STEP), converters=_WORKLOAD_STATUS_MESSAGE_CONVERTERS)
