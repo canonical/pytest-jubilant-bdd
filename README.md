@@ -19,8 +19,9 @@ pytest-jubilant-bdd package include:
   Juju model.
 * `add_model`: A `given` step handler for adding a new Juju model to the
   testing context, with an optional `with constraints` clause. Constraint
-  values support `{arch}` placeholders resolved from the testing context's
-  scenario state.
+  values support dot-syntax placeholders resolved from the testing context's
+  scenario state and its read-only `host_info` attribute — for example,
+  `{host.arch}` for the host architecture.
 * `add_storage`: A `given` step handler for adding storage to a deployed
   unit, with optional storage pool, size, and count clauses.
 * `add_unit`: A `given`/`when` step handler for adding units to a deployed
@@ -63,9 +64,6 @@ pytest-jubilant-bdd package include:
   on a deployed application.
 * `set_model_config`: A `given` step handler for setting a configuration
   option on a Juju model.
-* `store_host_architecture`: A `given` step handler for storing the host
-  architecture (as a Debian architecture name) in the scenario state, e.g. for
-  use as a `{arch}` placeholder in model constraints.
 * `switch_model`: A `given` step handler for switching the default model
   that subsequent step handlers operate on.
 * `unit_exists`: A `given` step handler for asserting that a specific unit

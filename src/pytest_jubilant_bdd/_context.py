@@ -14,11 +14,13 @@
 
 """Track and control behavior-driven development (BDD) testing contexts."""
 
+import platform
 import secrets
 import time
 from collections import deque
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Any
 
 from jubilant import Juju, Task
@@ -32,6 +34,20 @@ from .errors import (
     UnitNotFoundError,
     WaitError,
 )
+
+
+def _host_arch() -> str:
+    """Get the host architecture as a Juju architecture name.
+
+    ``platform.machine()`` output is mapped to the Juju architecture names
+    ``amd64`` and ``arm64`` where applicable. Unknown values pass through
+    lowercased with underscores replaced by hyphens.
+
+    Returns:
+        The host architecture as a Juju architecture name.
+    """
+    machine = platform.machine().lower().replace("_", "-")
+    return {"x86-64": "amd64", "aarch64": "arm64"}.get(machine, machine)
 
 
 class stack[T]:  # noqa N802
@@ -171,6 +187,9 @@ class Context:
         scenario_state: Mutable mapping that tracks abitrary values between steps.
         ssh_results: Stack that tracks the results of ``juju ssh``.
         models: Mapping that tracks models in the testing context.
+        host_info:
+            Read-only mapping of host machine metadata. The ``arch`` key holds
+            the host architecture as a Juju architecture name.
     """
 
     wait_timeout: float = DEFAULT_WAIT_TIMEOUT
@@ -178,6 +197,9 @@ class Context:
     exec_results: stack[Task] = field(default_factory=lambda: stack[Task](), init=False)
     scenario_state: dict[str, Any] = field(default_factory=dict, init=False)
     ssh_results: stack[str] = field(default_factory=lambda: stack[str](), init=False)
+    host_info: Mapping[str, str] = field(
+        default_factory=lambda: MappingProxyType({"arch": _host_arch()}), init=False
+    )
     models: ModelMapping = field(default_factory=ModelMapping, init=False)
     _default_model: str | None = field(default=None, init=False)
 

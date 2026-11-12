@@ -16,7 +16,7 @@
 """Unit tests for reusable *Given* Gherkin steps."""
 
 import json
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from pathlib import Path
 from typing import cast
 from unittest.mock import MagicMock
@@ -54,7 +54,6 @@ from pytest_jubilant_bdd._main import (
     reset_model_config,
     set_app_config,
     set_model_config,
-    store_host_architecture,
     switch_model,
     unit_exists,
 )
@@ -293,6 +292,73 @@ class TestAddModel:
             "mem=4G",
         ]
 
+    def test_with_constraints_from_host_info(
+        self, mock_subprocess_run: MagicMock, mocker: MockerFixture
+    ) -> None:
+        """``add_model`` resolves constraint placeholders from the host info.
+
+        Notes:
+            This test calls the handler directly rather than via ``@scenario``
+            because the host architecture must be fixed before the ``Context``
+            is constructed, and ``@scenario`` executes the Gherkin steps before
+            the test body.
+        """
+        mocker.patch("pytest_jubilant_bdd._context.platform.machine", return_value="x86_64")
+        context = Context()
+
+        add_model(context, "test", "arch={host.arch}")
+
+        model = f"test-{MODEL_SUFFIX}"
+
+        assert model in context.models
+        set_model_constraints_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][1] == "set-model-constraints"
+        ]
+        assert len(set_model_constraints_calls) == 1
+        assert set_model_constraints_calls[0].args[0] == [
+            "juju",
+            "set-model-constraints",
+            "--model",
+            model,
+            "arch=amd64",
+        ]
+
+    def test_with_constraints_from_nested_scenario_state(
+        self, mock_subprocess_run: MagicMock, mocker: MockerFixture
+    ) -> None:
+        """``add_model`` resolves dotted placeholders into nested scenario state.
+
+        Notes:
+            This test calls the handler directly rather than via ``@scenario``
+            because the scenario state must be seeded before the handler runs,
+            and ``@scenario`` executes the Gherkin steps before the test body.
+        """
+        mocker.patch("pytest_jubilant_bdd._context.platform.machine", return_value="x86_64")
+        context = Context()
+        context.scenario_state["gpu"] = {"model": "A100"}
+
+        add_model(context, "test", "arch={host.arch} gpu={gpu.model}")
+
+        model = f"test-{MODEL_SUFFIX}"
+
+        assert model in context.models
+        set_model_constraints_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][1] == "set-model-constraints"
+        ]
+        assert len(set_model_constraints_calls) == 1
+        assert set_model_constraints_calls[0].args[0] == [
+            "juju",
+            "set-model-constraints",
+            "--model",
+            model,
+            "arch=amd64",
+            "gpu=A100",
+        ]
+
     def test_raises_when_variable_missing(
         self, context: Context, mock_subprocess_run: MagicMock
     ) -> None:
@@ -304,8 +370,35 @@ class TestAddModel:
             steps before the test body, so exceptions raised during step
             execution cannot be caught with ``pytest.raises`` in the body.
         """
-        with pytest.raises(ValueError, match="'cluster' not found in the scenario state"):
+        with pytest.raises(
+            ValueError,
+            match="'cluster' not found in the scenario state or the host info",
+        ):
             add_model(context, "test", "arch={cluster}")
+
+        add_model_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][1] == "add-model"
+        ]
+        assert len(add_model_calls) == 0
+
+    def test_raises_when_dotted_variable_missing(
+        self, context: Context, mock_subprocess_run: MagicMock
+    ) -> None:
+        """``add_model`` raises when a dotted placeholder path is unresolved.
+
+        Notes:
+            This error path is tested by calling the handler directly rather
+            than via ``@scenario`` because ``@scenario`` runs the Gherkin
+            steps before the test body, so exceptions raised during step
+            execution cannot be caught with ``pytest.raises`` in the body.
+        """
+        with pytest.raises(
+            ValueError,
+            match="'host.bogus' not found in the scenario state or the host info",
+        ):
+            add_model(context, "test", "arch={host.bogus}")
 
         add_model_calls = [
             call
@@ -1518,51 +1611,3 @@ class TestSwitchModel:
         """``switch_model`` raises when the model is not in the context."""
         with pytest.raises(ModelNotFoundError, match="Model 'nonexistent' not found"):
             switch_model(context, "nonexistent")
-
-
-class TestStoreHostArchitecture:
-    """Test the ``store_host_architecture`` *Given* step handler."""
-
-    @pytest.fixture(autouse=True)
-    def _mock_machine(self, mocker: MockerFixture) -> None:
-        """Mock ``platform.machine`` for determinism across runner architectures."""
-        mocker.patch("pytest_jubilant_bdd._main.platform.machine", return_value="x86_64")
-
-    @pytest.fixture(autouse=True)
-    def _clear_scenario_state(self, context: Context) -> Iterator[None]:
-        """Clear the session-scoped scenario state before and after each test."""
-        context.scenario_state.clear()
-        yield
-        context.scenario_state.clear()
-
-    @staticmethod
-    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Store host architecture")
-    def test_required(context: Context) -> None:
-        """Test ``store_host_architecture`` stores the mapped Juju architecture."""
-        # ``x86_64`` (from the autouse mock) maps to the Juju name ``amd64``.
-        assert context.scenario_state["arch"] == "amd64"
-
-    def test_maps_arm64(
-        self,
-        context: Context,
-        mocker: MockerFixture,
-    ) -> None:
-        """``store_host_architecture`` maps ``aarch64`` to the Juju name ``arm64``."""
-        mocker.patch("pytest_jubilant_bdd._main.platform.machine", return_value="aarch64")
-
-        store_host_architecture(context, "arch")
-
-        assert context.scenario_state["arch"] == "arm64"
-
-    def test_passthrough_unknown_machine(
-        self,
-        context: Context,
-        mocker: MockerFixture,
-    ) -> None:
-        """``store_host_architecture`` passes unknown machine values through normalized."""
-        mocker.patch("pytest_jubilant_bdd._main.platform.machine", return_value="RISCV64")
-
-        store_host_architecture(context, "arch")
-
-        # Unknown values are lowercased and underscore-normalized but not mapped.
-        assert context.scenario_state["arch"] == "riscv64"
