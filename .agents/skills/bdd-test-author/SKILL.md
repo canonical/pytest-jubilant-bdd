@@ -172,10 +172,11 @@ status on your own initiative to make a suite pass.
 
 Use `Given I add model '<name>'` + `Given I switch to model '<name>'` for the
 default, and scope individual steps with `in model '<name>'` clauses. When a
-model needs Juju constraints (for example, `arch={arch}` on multi-architecture
-runners), use `Given I add model '<name>' with constraints '<constraints>'` —
-constraint values support `{name}` placeholders resolved from the scenario
-state. See the two-model example in [examples.md](examples.md).
+model needs Juju constraints (for example, `arch={host.arch}` on
+multi-architecture runners), use `Given I add model '<name>' with constraints
+'<constraints>'` — constraint values support dot-syntax placeholders resolved
+from the scenario state and the host info (`{host.arch}` for the host
+architecture). See the two-model example in [examples.md](examples.md).
 
 ## Built-in step reference
 

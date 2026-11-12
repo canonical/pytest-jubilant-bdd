@@ -20,7 +20,6 @@ __all__ = ["Context"]
 import json
 import logging
 import os
-import platform
 import shlex
 import subprocess
 import time
@@ -109,13 +108,60 @@ def context(request: pytest.FixtureRequest) -> Iterator[Context]:
 # Given steps - Setup and context building
 
 
+class _AttrNamespace:
+    """Expose mapping keys as attributes so ``str.format`` resolves ``a.b`` paths.
+
+    ``str.format`` parses ``{host.arch}`` as attribute access on the value of
+    ``host``, so nested mappings are wrapped in this class to turn attribute
+    access into item lookup. Used by ``add_model`` to resolve constraint
+    placeholders against the testing context.
+
+    Args:
+        mapping: The mapping to expose.
+        path: Dot-separated path of this namespace within the placeholder
+            root, used for error messages.
+    """
+
+    def __init__(self, mapping: Mapping[str, Any], path: str = "") -> None:
+        self._mapping = mapping
+        self._path = path
+
+    def __getattr__(self, name: str) -> Any:
+        """Resolve ``name`` as a key in the wrapped mapping.
+
+        Args:
+            name: Attribute name, corresponding to a mapping key.
+
+        Returns:
+            The value at ``name``, wrapped for further attribute access if it
+            is itself a mapping.
+
+        Raises:
+            AttributeError: If ``name`` is not a key in the wrapped mapping.
+        """
+        path = f"{self._path}.{name}" if self._path else name
+        try:
+            value = self._mapping[name]
+        except KeyError:
+            raise AttributeError(path) from None
+
+        if isinstance(value, Mapping):
+            return _AttrNamespace(value, path)
+
+        return value
+
+
 @given(flexible("I add model '{model}' [with constraints '{constraints}']"))
 def add_model(context: Context, model: str, constraints: str | None) -> None:
     """Add a new model.
 
     The optional ``with constraints`` clause applies Juju constraints to the
-    model. Constraint values support ``{arch}`` format placeholders that are
-    resolved from the testing context's ``scenario_state`` mapping.
+    model. Constraint values support format placeholders resolved from the
+    testing context's ``scenario_state`` mapping and its read-only
+    ``host_info`` attribute. Plain keys resolve from the scenario state (for
+    example, ``{arch}``), and dot syntax reaches into nested mappings: the
+    host machine metadata is available under ``host`` (for example,
+    ``{host.arch}`` for the host architecture).
 
     Args:
         context: The testing context.
@@ -130,18 +176,25 @@ def add_model(context: Context, model: str, constraints: str | None) -> None:
         of the underlying machine, which fails on non-amd64 runners.
 
     Raises:
-        ValueError: If a constraint placeholder is not present in the
-            scenario state, or if the resolved constraints are empty.
+        ValueError: If a constraint placeholder cannot be resolved from the
+            scenario state or the host info, or if the resolved constraints
+            are empty.
     """
     resolved_constraints = None
     if constraints is not None:
         try:
-            resolved_constraints = constraints.format_map(context.scenario_state)
-        except KeyError as e:
+            placeholders: dict[str, Any] = {"host": _AttrNamespace(context.host_info, "host")}
+            for key, value in context.scenario_state.items():
+                placeholders[key] = (
+                    _AttrNamespace(value, key) if isinstance(value, Mapping) else value
+                )
+            resolved_constraints = constraints.format_map(placeholders)
+        except (AttributeError, KeyError) as e:
             missing = e.args[0] if e.args else constraints
             raise ValueError(
-                f"Constraint variable '{missing}' not found in the scenario state. "
-                f"Store it with a scenario step before adding the model."
+                f"Constraint variable '{missing}' not found in the scenario state "
+                f"or the host info. Store it with a scenario step before adding "
+                f"the model."
             ) from None
 
         if not resolved_constraints.strip():
@@ -174,23 +227,6 @@ def add_model(context: Context, model: str, constraints: str | None) -> None:
             logger.debug(e)
     else:
         logger.warning("'%s' is set but '%s' is not a file", env_var, cloudinit_userdata)
-
-
-@given(parsers.parse("I store the host architecture as '{arch}'"))
-def store_host_architecture(context: Context, arch: str) -> None:
-    """Store the host architecture in the scenario state under ``arch``.
-
-    The stored architecture uses Debian architecture names, so it can be used
-    for setting up model configurations, constraints, package configurations,
-    etc.
-
-    Args:
-        context: The testing context.
-        arch: Key under which to store the architecture.
-    """
-    machine = platform.machine().lower().replace("_", "-")
-    mapped_arch = {"x86-64": "amd64", "aarch64": "arm64"}.get(machine, machine)
-    context.scenario_state[arch] = mapped_arch
 
 
 _ADD_UNIT_STEP = "I add '{num_units}' %units?% to app '{app}' " + OPTIONAL_MODEL_CLAUSE
