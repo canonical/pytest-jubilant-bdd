@@ -673,11 +673,7 @@ def unit_exists(context: Context, unit: str, model: str | None) -> None:
 
 @given(parsers.parse("environment variable '{env_var}' is set"))
 def is_env_var_set(context: Context, env_var: str) -> None:
-    """Verify that a required environment variable is set in the test environment.
-
-    Notes:
-      - An environment variable that is present but has no value is treated as not set.
-    """
+    """Verify that a required environment variable is set in the test environment."""
     value = os.environ.get(env_var)
     if value is None:
         raise AssertionError(
