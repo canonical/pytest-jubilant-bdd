@@ -111,13 +111,27 @@ handler is registered under.
 
 | Step phrasing | Handler | Result stack |
 |----------------|---------|--------------|
-| `I run action '{action}' on unit[s] '{u1}', '{u2}', and '{u3}' [with parameters '{k=v ...}'] [in model '{model}']` | `run_action` | `context.action_results` |
-| `I execute '{command}' on machine[s] '{m1}' and '{m2}' [in model '{model}']` | `run_exec` | `context.exec_results` |
-| `I execute '{command}' on unit[s] '{u1}' and '{u2}' [in model '{model}']` | `run_exec` | `context.exec_results` |
-| `I ssh into machine '{m}' and I execute '{command}' [in model '{model}']` | `run_ssh` | `context.ssh_results` |
-| `I ssh into unit '{u}' and I execute '{command}' [in model '{model}']` | `run_ssh` | `context.ssh_results` |
+| `I run action '{action}' on unit[s] '{u1}', '{u2}', and '{u3}' [with parameters '{k=v ...}'] [in model '{model}'] [within '{wait}' seconds]` | `run_action` | `context.action_results` |
+| `I execute '{command}' on machine[s] '{m1}' and '{m2}' [in model '{model}'] [within '{wait}' seconds]` | `run_exec` | `context.exec_results` |
+| `I execute '{command}' on unit[s] '{u1}' and '{u2}' [in model '{model}'] [within '{wait}' seconds]` | `run_exec` | `context.exec_results` |
+| `I ssh into machine '{m}' and I execute '{command}' [in model '{model}'] [within '{wait}' seconds]` | `run_ssh` | `context.ssh_results` |
+| `I ssh into unit '{u}' and I execute '{command}' [in model '{model}'] [within '{wait}' seconds]` | `run_ssh` | `context.ssh_results` |
 | `I copy '{source}' to unit '{unit}' [at '{remote_path}'] [in model '{model}']` | `scp_to_unit` | — |
 | `I copy '{remote_path}' from unit '{unit}' [to '{local_path}'] [in model '{model}']` | `scp_from_unit` | — |
+
+Notes:
+
+- The optional `within '{wait}' seconds` clause on `run_action`, `run_exec`,
+  and `run_ssh` (also phrased `it completes within '{wait}' seconds`) bounds
+  each invocation. On `run_action` and `run_exec` it maps to jubilant's
+  server-side `--wait` argument — a per-unit and per-target budget
+  respectively; when omitted, Juju's defaults apply (60 s for actions, 5
+  minutes for `exec`). On `run_ssh` the local `juju ssh` client process is
+  monitored and killed when the deadline passes, so remotely detached
+  commands (for example under `nohup`) may keep running.
+- The completion-timeout clause is independent of the global
+  `--juju-bdd-wait-timeout`, which only affects polling-based checkpoint
+  steps.
 
 ### Checkpoints (attestation)
 
