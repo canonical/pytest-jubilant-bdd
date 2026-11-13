@@ -333,7 +333,12 @@ Key facts:
   `When I execute ...` pushes onto `context.exec_results`;
   `When I ssh into ... and I execute ...` pushes onto `context.ssh_results`.
   Action parameters are space-separated `k=v` pairs; lowercase `true`/`false`
-  are cast to Python booleans.
+  are cast to Python booleans. All three also accept an optional
+  `it completes within '{wait}' seconds` clause (bare form:
+  `within '{wait}' seconds`) bounding the invocation — forwarded to
+  jubilant's `wait` parameter for `run_action`/`run_exec`, and enforced by
+  killing the local `juju ssh` client for `run_ssh` — independent of the
+  global `--juju-bdd-wait-timeout`.
 - Several handlers are dual-registered as `Given` and `When` (`add_unit`,
   `integrate`, `disintegrate`, `remove_app`, `remove_unit`), so the same
   phrasing works in either stanza.

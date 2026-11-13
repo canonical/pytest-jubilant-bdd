@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
-from jubilant import TaskError
+from jubilant import Juju, TaskError
 from pytest_bdd import given, parsers, then, when
 
 from ._assertions import assertions
@@ -37,6 +37,7 @@ from ._constants import (
     AGENT_STATUS_CAPTURE_GROUP,
     DEFAULT_WAIT_TIMEOUT,
     NO_TEARDOWN_FLAG_NAME,
+    OPTIONAL_COMPLETION_TIMEOUT_CLAUSE,
     OPTIONAL_MODEL_CLAUSE,
     OPTIONAL_TIMEOUT_CLAUSE,
     WAIT_TIMEOUT_FLAG_NAME,
@@ -769,9 +770,16 @@ def switch_model(context: Context, model: str) -> None:
 @when(
     flexible(
         r"I run action '{action}' on %units? (?P<units>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
-        "[with parameters '{params}'] " + OPTIONAL_MODEL_CLAUSE
+        "[with parameters '{params}'] "
+        + OPTIONAL_MODEL_CLAUSE
+        + " "
+        + OPTIONAL_COMPLETION_TIMEOUT_CLAUSE
     ),
-    converters={"units": make_list, "params": make_dict},
+    converters={
+        "units": make_list,
+        "params": make_dict,
+        "wait": lambda v: float(v) if v is not None else None,
+    },
 )
 def run_action(
     context: Context,
@@ -779,6 +787,7 @@ def run_action(
     units: list[str],
     params: Mapping[str, Any],
     model: str | None,
+    wait: float | None = None,
 ) -> None:
     """Run an action on one or more units."""
     juju = context.get_juju(model)
@@ -788,7 +797,7 @@ def run_action(
         # Set `params` to `None` if the Gherkin step doesn't include action parameters to
         # avoid the creation of a superfluous temp file.
         try:
-            result = juju.run(unit, action, params=params if params else None)
+            result = juju.run(unit, action, params=params if params else None, wait=wait)
         except TaskError as e:
             result = e.task
 
@@ -799,8 +808,13 @@ def run_action(
     flexible(
         r"I execute '{command}' on %(?P<type_>machines?|units?) (?P<targets>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
         + OPTIONAL_MODEL_CLAUSE
+        + " "
+        + OPTIONAL_COMPLETION_TIMEOUT_CLAUSE
     ),
-    converters={"targets": make_list},
+    converters={
+        "targets": make_list,
+        "wait": lambda v: float(v) if v is not None else None,
+    },
 )
 def run_exec(
     context: Context,
@@ -808,6 +822,7 @@ def run_exec(
     type_: str,
     targets: list[str | int],
     model: str | None,
+    wait: float | None = None,
 ) -> None:
     """Run remote commands on provided targets."""
     juju = context.get_juju(model)
@@ -816,9 +831,9 @@ def run_exec(
         try:
             match type_.rstrip("s"):
                 case "machine":
-                    result = juju.exec(command, machine=target)
+                    result = juju.exec(command, machine=target, wait=wait)
                 case "unit":
-                    result = juju.exec(command, unit=cast(str, target))
+                    result = juju.exec(command, unit=cast(str, target), wait=wait)
         except TaskError as e:
             result = e.task
 
@@ -830,28 +845,61 @@ def run_exec(
 @when(
     flexible(
         r"I ssh into %(?P<type_>machine|unit) '(?P<target>[^']+)'% "
-        r"and I execute '{command}'" + OPTIONAL_MODEL_CLAUSE
+        r"and I execute '{command}'"
+        + OPTIONAL_MODEL_CLAUSE
+        + " "
+        + OPTIONAL_COMPLETION_TIMEOUT_CLAUSE
     ),
+    converters={"wait": lambda v: float(v) if v is not None else None},
 )
 def run_ssh(
     context: Context,
     type_: str,
-    target: str,
+    target: str | int,
     command: str,
     model: str | None,
+    wait: float | None = None,
 ) -> None:
     """SSH into a machine or unit and execute a command."""
     juju = context.get_juju(model)
 
-    match type_:
-        case "machine":
-            result = juju.ssh(int(target), command)
-        case "unit":
-            result = juju.ssh(target, command)
+    if type_ == "machine":
+        target = int(target)
 
-    context.ssh_results.push(result)  # type: ignore[reportPossiblyUnboundVariable] # noqa
-    # `result` cannot be unbound because this step handler will always match `type_`
-    # to "machine" or "unit". Otherwise, this handler will not match the Gherkin step.
+    result = _ssh_with_timeout(juju, target=target, command=command, timeout=wait)
+    context.ssh_results.push(result)
+
+
+def _ssh_with_timeout(
+    juju: Juju,
+    /,
+    *,
+    target: str | int,
+    command: str,
+    timeout: float | None = None,
+) -> str:
+    """Run ``juju ssh`` with a client-side wall-clock timeout.
+
+    Args:
+        juju: The Juju CLI harness to execute ``command`` through.
+        target: Remote target to execute ``command`` on.
+        command: Command to execute on ``target``.
+        timeout: Optional wait timeout for executed command.
+
+    Warnings:
+        - If ``TimeoutError`` is raised, the local ``juju ssh`` process will be killed,
+          but the remote process that caused the ``TimeoutError`` to be raised may continue
+          running on the machine/unit.
+
+    Raises:
+        TimeoutError: Raised if the ssh command does not complete within *timeout* seconds.
+    """
+    try:
+        stdout, _ = juju._cli("ssh", str(target), command, timeout=timeout)  # noqa: SLF001
+    except subprocess.TimeoutExpired:
+        raise TimeoutError(f"juju ssh '{command}' did not complete within {timeout}s") from None
+
+    return stdout
 
 
 @when(

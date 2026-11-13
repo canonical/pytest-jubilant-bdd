@@ -139,13 +139,27 @@ handler is registered under.
 
 | Step phrasing | Handler | Result stack |
 |----------------|---------|--------------|
-| `I run action '{action}' on unit[s] '{u1}', '{u2}', and '{u3}' [with parameters '{k=v ...}'] [in model '{model}']` | `run_action` | `context.action_results` |
-| `I execute '{command}' on machine[s] '{m1}' and '{m2}' [in model '{model}']` | `run_exec` | `context.exec_results` |
-| `I execute '{command}' on unit[s] '{u1}' and '{u2}' [in model '{model}']` | `run_exec` | `context.exec_results` |
-| `I ssh into machine '{m}' and I execute '{command}' [in model '{model}']` | `run_ssh` | `context.ssh_results` |
-| `I ssh into unit '{u}' and I execute '{command}' [in model '{model}']` | `run_ssh` | `context.ssh_results` |
+| `I run action '{action}' on unit[s] '{u1}', '{u2}', and '{u3}' [with parameters '{k=v ...}'] [in model '{model}'] [within '{wait}' seconds]` | `run_action` | `context.action_results` |
+| `I execute '{command}' on machine[s] '{m1}' and '{m2}' [in model '{model}'] [within '{wait}' seconds]` | `run_exec` | `context.exec_results` |
+| `I execute '{command}' on unit[s] '{u1}' and '{u2}' [in model '{model}'] [within '{wait}' seconds]` | `run_exec` | `context.exec_results` |
+| `I ssh into machine '{m}' and I execute '{command}' [in model '{model}'] [within '{wait}' seconds]` | `run_ssh` | `context.ssh_results` |
+| `I ssh into unit '{u}' and I execute '{command}' [in model '{model}'] [within '{wait}' seconds]` | `run_ssh` | `context.ssh_results` |
 | `I copy '{source}' to unit '{unit}' [at '{remote_path}'] [in model '{model}']` | `scp_to_unit` | — |
 | `I copy '{remote_path}' from unit '{unit}' [to '{local_path}'] [in model '{model}']` | `scp_from_unit` | — |
+
+Notes:
+
+- The optional `within '{wait}' seconds` clause on `run_action`, `run_exec`,
+  and `run_ssh` (also phrased `it completes within '{wait}' seconds`) bounds
+  each invocation. On `run_action` and `run_exec` it maps to jubilant's
+  server-side `--wait` argument — a per-unit and per-target budget
+  respectively; when omitted, Juju's defaults apply (60 s for actions, 5
+  minutes for `exec`). On `run_ssh` the local `juju ssh` client process is
+  monitored and killed when the deadline passes, so remotely detached
+  commands (for example under `nohup`) may keep running.
+- The completion-timeout clause is independent of the global
+  `--juju-bdd-wait-timeout`, which only affects polling-based checkpoint
+  steps.
 
 ### Checkpoints (attestation)
 
@@ -269,8 +283,8 @@ lands in the YAML test plan; the right column shows the BDD equivalent
 | `juju.config("app", reset=["key"])` | `scenarios[i]` steps | `Given I reset '{key}' for app '{app}'` |
 | `juju.add_unit("app", num_units=n)` | `scenarios[i]` steps | `Given I add '{n}' units to app '{app}'` |
 | `juju.remove_unit("app/N", force=True)` for a down/failed unit | custom step | The built-in `remove_unit` step has no `[forcibly]` clause — only `remove_app` does. Units whose machine is `down` require `force=True`: write a custom `@when` step that calls `juju.remove_unit(..., force=True)` directly. |
-| `juju.run("app/0", "action", params=...)` | `scenarios[i]` steps | `When I run action '{action}' on unit '{u}' [with parameters '{k=v ...}']` — results pushed to `context.action_results`. Parameters are space-separated `k=v` pairs; lowercase `true`/`false` are cast to Python booleans. |
-| `juju.exec("cmd", unit="app/0")` | `scenarios[i]` steps | `When I execute '{cmd}' on unit '{u}'` — results pushed to `context.exec_results`. |
+| `juju.run("app/0", "action", params=...)` | `scenarios[i]` steps | `When I run action '{action}' on unit '{u}' [with parameters '{k=v ...}'] [within '{wait}' seconds]` — results pushed to `context.action_results`. Parameters are space-separated `k=v` pairs; lowercase `true`/`false` are cast to Python booleans. A legacy `juju.run(..., wait=...)` timeout maps to `[within '{wait}' seconds]`. |
+| `juju.exec("cmd", unit="app/0")` | `scenarios[i]` steps | `When I execute '{cmd}' on unit '{u}' [within '{wait}' seconds]` — results pushed to `context.exec_results`. |
 | `juju.run(unit_A, "action")` where the action modifies state of a node on unit_B, then `juju.exec("... node <unit_B-name>", unit=unit_A)` | `scenarios[i]` steps | `When I run action '{action}' on unit '{unit_A}'` + custom `Then` referencing `unit '{unit_B}'` — the verification step must name the **node owner**, not the action executor. |
 | `juju.wait(lambda s: s.apps["app"].status == "active")` | `scenarios[i]` steps | `Then the workload status for app '{app}' is 'active'` — the framework polls via `context.wait()`. `juju.wait()` is an assertion, not setup: do not hide it in a custom deploy `Given` step when integrations happen in later steps. |
 | Custom status checker `def _ready(s): ...` passed to `juju.wait` | custom step | Keep as a helper, or wrap it in a custom `Then` step that calls `context.wait(ready=...)`. |
