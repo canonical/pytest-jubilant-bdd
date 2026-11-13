@@ -205,7 +205,7 @@ Key facts:
 - Built-in coverage also includes machines (`add_machine`), storage
   (`add_storage`, `remove_storage`), cross-model offers (`create_offer`,
   `consume_offer`), file copy (`scp_to_unit`, `scp_from_unit`),
-  environment-variable instantiation checks (`is_env_var_set`), and
+  environment-variable handling (`is_env_var_set`, `set_env_var`), and
   existence/config checks (`app_exists`, `unit_exists`,
   `is_app_config_set`). Check the phrasing table before writing a custom
   step.
