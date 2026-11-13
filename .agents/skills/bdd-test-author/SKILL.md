@@ -204,7 +204,7 @@ Key facts:
   phrasing works in either stanza.
 - Built-in coverage also includes machines (`add_machine`), storage
   (`add_storage`, `remove_storage`), cross-model offers (`create_offer`,
-  `consume_offer`), file copy (`scp_to_unit`, `scp_from_unit`),
+  `consume_offer`), file copy (`scp_pull`, `scp_push`),
   environment-variable instantiation checks (`is_env_var_set`), and
   existence/config checks (`app_exists`, `unit_exists`,
   `is_app_config_set`). Check the phrasing table before writing a custom

@@ -855,61 +855,85 @@ def run_ssh(
 
 
 @when(
-    flexible("I copy '{source}' to unit '{unit}' [at '{remote_path}'] " + OPTIONAL_MODEL_CLAUSE),
+    flexible(
+        r"I copy '{source}' to %(?:machine|unit) '(?P<target>[^']+)'% "
+        r"[at '{remote_path}'] " + OPTIONAL_MODEL_CLAUSE
+    ),
 )
-def scp_to_unit(
+def scp_push(
     context: Context,
     source: str,
-    unit: str,
+    target: str,
     remote_path: str | None,
     model: str | None,
 ) -> None:
-    """Copy a local file or directory to a deployed unit.
+    """Copy a local file or directory to a deployed unit or machine.
 
     Raises:
         FileNotFoundError: Raised if the local ``source`` path does not exist.
 
     Notes:
         - When ``at '{remote_path}'`` is omitted, the file is copied into the
-          remote user's home directory on the unit.
+          remote user's home directory on the target unit or machine.
+        - When ``source`` is a directory, it is transferred recursively by
+          passing ``-r`` to the ``scp`` client automatically.
     """
-    if not Path(source).exists():
+    source_path = Path(source)
+    if not source_path.exists():
         raise FileNotFoundError(f"Source not found: '{source}' does not exist") from None
+
+    scp_options = ["-r"] if source_path.is_dir() else []
 
     juju = context.get_juju(model)
 
     if remote_path is None:
-        destination = unit
+        destination = target
     else:
-        destination = f"{unit}:{remote_path}"
+        destination = f"{target}:{remote_path}"
 
-    juju.scp(source, destination)
+    juju.scp(source, destination, scp_options=scp_options)
 
 
 @when(
     flexible(
-        "I copy '{remote_path}' from unit '{unit}' [to '{local_path}'] " + OPTIONAL_MODEL_CLAUSE
+        r"I copy '{remote_path}' from %(?P<type_>machine|unit) '(?P<target>[^']+)'% "
+        r"[to '{local_path}'] " + OPTIONAL_MODEL_CLAUSE
     ),
 )
-def scp_from_unit(
+def scp_pull(
     context: Context,
     remote_path: str,
-    unit: str,
+    type_: str,
+    target: str,
     local_path: str | None,
     model: str | None,
 ) -> None:
-    """Copy a file or directory from a deployed unit to the local machine.
+    """Copy a file or directory from a deployed unit or machine.
 
     Notes:
         - When ``to '{local_path}'`` is omitted, the file is written into
           the working directory using the basename of the remote path.
+        - Whether ``remote_path`` is a directory is detected with a
+          ``test -d`` probe run on the target unit or machine; directories
+          are transferred recursively by passing ``-r`` to the ``scp``
+          client automatically.
     """
     juju = context.get_juju(model)
+
+    try:
+        match type_:
+            case "machine":
+                juju.exec(f"test -d {shlex.quote(remote_path)}", machine=target)
+            case "unit":
+                juju.exec(f"test -d {shlex.quote(remote_path)}", unit=target)
+        scp_options = ["-r"]
+    except TaskError:
+        scp_options = []
 
     if local_path is None:
         local_path = Path(remote_path).name
 
-    juju.scp(f"{unit}:{remote_path}", local_path)
+    juju.scp(f"{target}:{remote_path}", local_path, scp_options=scp_options)
 
 
 # Checkpoint steps - Attestation and verification.

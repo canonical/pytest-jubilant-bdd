@@ -27,7 +27,7 @@ from pytest_bdd import scenario
 from pytest_jubilant_bdd import Context
 
 # ruff: disable[SLF001]
-from pytest_jubilant_bdd._main import scp_to_unit
+from pytest_jubilant_bdd._main import scp_push
 
 # ruff: enable[SLF001]
 
@@ -87,6 +87,23 @@ def fake_source_file(fs: FakeFilesystem) -> str:
     path = "/tmp/sbatch_sleep_job.sh"
     fs.create_file(path, contents="#!/bin/bash\nsleep 10\n")
     return path
+
+
+@pytest.fixture(scope="function")
+def fake_source_dir(fs: FakeFilesystem) -> str:
+    """Create a fake benchmarks directory on the pyfakefs filesystem."""
+    path = "/tmp/reframe_benchmarks"
+    fs.create_dir(path)
+    return path
+
+
+@pytest.fixture(scope="function")
+def _mock_remote_file_probe(mock_subprocess_run: MagicMock, _mock_task_json: None) -> None:
+    """Configure ``mock_subprocess_run`` so that ``test -d`` probe fails."""
+    mock_subprocess_run.return_value = MagicMock(
+        stdout=make_task_json("login/0", return_code=1),
+        stderr="",
+    )
 
 
 class TestRunAction:
@@ -270,13 +287,13 @@ class TestRunSSH:
         assert len(context.ssh_results) == 1
 
 
-class TestScpToUnit:
-    """Test the ``scp_to_unit`` *When* step handler."""
+class TestScpPush:
+    """Test the ``scp_push`` *When* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file to unit")
     def test_required(mock_subprocess_run: MagicMock, fake_source_file: str) -> None:
-        """Test ``scp_to_unit`` with only the required clauses."""
+        """Test ``scp_push`` with only the required clauses."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "scp",
@@ -288,7 +305,7 @@ class TestScpToUnit:
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file to unit at remote path in model")
     def test_with_optionals(mock_subprocess_run: MagicMock, fake_source_file: str) -> None:
-        """Test ``scp_to_unit`` with all optional clauses."""
+        """Test ``scp_push`` with all optional clauses."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "scp",
@@ -299,19 +316,46 @@ class TestScpToUnit:
             "login/0:/home/ubuntu/sbatch_sleep_job.sh",
         ]
 
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy directory to unit")
+    def test_directory(mock_subprocess_run: MagicMock, fake_source_dir: str) -> None:
+        """Test ``scp_push`` passes ``-r`` when the source is a directory."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "scp",
+            "--",
+            "-r",
+            fake_source_dir,
+            "login/0",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file to machine")
+    def test_machine_target(mock_subprocess_run: MagicMock, fake_source_file: str) -> None:
+        """Test ``scp_push`` accepts a machine ID as the copy target."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "scp",
+            "--",
+            fake_source_file,
+            "0",
+        ]
+
     def test_raises_when_source_missing(self, context: Context) -> None:
         """``scp`` raises when the local source path does not exist."""
         with pytest.raises(FileNotFoundError, match="Source not found: '/does/not/exist'"):
-            scp_to_unit(context, "/does/not/exist", "login/0", None, None)
+            scp_push(context, "/does/not/exist", "login/0", None, None)
 
 
-class TestScpFromUnit:
-    """Test the ``scp_from_unit`` *When* step handler."""
+class TestScpPull:
+    """Test the ``scp_pull`` *When* step handler."""
 
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file from unit")
-    def test_required(mock_subprocess_run: MagicMock, fs: FakeFilesystem) -> None:
-        """Test ``scp_from_unit`` with only the required clauses."""
+    def test_required(
+        _mock_remote_file_probe: None, mock_subprocess_run: MagicMock, fs: FakeFilesystem
+    ) -> None:
+        """Test ``scp_pull`` with only the required clauses."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "scp",
@@ -322,8 +366,29 @@ class TestScpFromUnit:
 
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file from unit to local path in model")
-    def test_with_optionals(mock_subprocess_run: MagicMock, fs: FakeFilesystem) -> None:
-        """Test ``scp_from_unit`` with all optional clauses."""
+    def test_with_optionals(
+        _mock_remote_file_probe: None, mock_subprocess_run: MagicMock, fs: FakeFilesystem
+    ) -> None:
+        """Test ``scp_pull`` with all optional clauses."""
+        probe_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][0:2] == ["juju", "exec"]
+        ]
+        assert len(probe_calls) == 1
+        probe_argv = probe_calls[0].args[0]
+        assert probe_argv == [
+            "juju",
+            "exec",
+            "--model",
+            f"test-{MODEL_SUFFIX}",
+            "--format",
+            "json",
+            "--unit",
+            "login/0",
+            "--",
+            "test -d /home/ubuntu/sbatch_sleep_job.sh",
+        ]
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
             "scp",
@@ -332,4 +397,47 @@ class TestScpFromUnit:
             "--",
             "login/0:/home/ubuntu/sbatch_sleep_job.sh",
             "testdata/sbatch_sleep_job.sh",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy directory from unit")
+    def test_directory(mock_subprocess_run: MagicMock, fs: FakeFilesystem) -> None:
+        """Test ``scp_pull`` passes ``-r`` when the remote path is a directory."""
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "scp",
+            "--",
+            "-r",
+            "login/0:/home/ubuntu/reframe_benchmarks",
+            "reframe_benchmarks",
+        ]
+
+    @staticmethod
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file from machine")
+    def test_machine_target(
+        _mock_remote_file_probe: None, mock_subprocess_run: MagicMock, fs: FakeFilesystem
+    ) -> None:
+        """Test ``scp_pull`` probes and copies from a machine ID target."""
+        probe_calls = [
+            call
+            for call in mock_subprocess_run.call_args_list
+            if call.args[0] and call.args[0][0:2] == ["juju", "exec"]
+        ]
+        assert len(probe_calls) == 1
+        assert probe_calls[0].args[0] == [
+            "juju",
+            "exec",
+            "--format",
+            "json",
+            "--machine",
+            "0",
+            "--",
+            "test -d /home/ubuntu/sbatch_sleep_job.sh",
+        ]
+        assert mock_subprocess_run.call_args[0][0] == [
+            "juju",
+            "scp",
+            "--",
+            "0:/home/ubuntu/sbatch_sleep_job.sh",
+            "sbatch_sleep_job.sh",
         ]
