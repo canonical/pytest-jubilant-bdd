@@ -46,3 +46,15 @@ Feature: Reusable `when` steps
 
   Scenario: Copy file from unit to local path in model
     When I copy '/home/ubuntu/sbatch_sleep_job.sh' from unit 'login/0' to 'testdata/sbatch_sleep_job.sh' in model 'test'
+
+  Scenario: Copy directory to unit
+    When I copy '/tmp/reframe_benchmarks' to unit 'login/0'
+
+  Scenario: Copy directory from unit
+    When I copy '/home/ubuntu/reframe_benchmarks' from unit 'login/0'
+
+  Scenario: Copy file to machine
+    When I copy '/tmp/sbatch_sleep_job.sh' to machine '0'
+
+  Scenario: Copy file from machine
+    When I copy '/home/ubuntu/sbatch_sleep_job.sh' from machine '0'

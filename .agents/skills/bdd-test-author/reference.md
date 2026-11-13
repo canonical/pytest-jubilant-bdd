@@ -116,8 +116,10 @@ handler is registered under.
 | `I execute '{command}' on unit[s] '{u1}' and '{u2}' [in model '{model}']` | `run_exec` | `context.exec_results` |
 | `I ssh into machine '{m}' and I execute '{command}' [in model '{model}']` | `run_ssh` | `context.ssh_results` |
 | `I ssh into unit '{u}' and I execute '{command}' [in model '{model}']` | `run_ssh` | `context.ssh_results` |
-| `I copy '{source}' to unit '{unit}' [at '{remote_path}'] [in model '{model}']` | `scp_to_unit` | — |
-| `I copy '{remote_path}' from unit '{unit}' [to '{local_path}'] [in model '{model}']` | `scp_from_unit` | — |
+| `I copy '{source}' to machine '{m}' [at '{remote_path}'] [in model '{model}']` | `scp_push` | — |
+| `I copy '{source}' to unit '{unit}' [at '{remote_path}'] [in model '{model}']` | `scp_push` | — |
+| `I copy '{remote_path}' from machine '{m}' [to '{local_path}'] [in model '{model}']` | `scp_pull` | — |
+| `I copy '{remote_path}' from unit '{unit}' [to '{local_path}'] [in model '{model}']` | `scp_pull` | — |
 
 ### Checkpoints (attestation)
 
@@ -154,10 +156,15 @@ Notes:
 - `pack_charm` skips `charmcraft pack` when the `<APP>_CHARM_PATH`
   environment variable is set; `deploy_local` reads the same environment
   variable when `located at '{path}'` is omitted.
-- `scp_to_unit` copies into the remote user's home directory when
-  `at '{remote_path}'` is omitted; `scp_from_unit` writes into the working
+- `scp_push` copies into the remote user's home directory when
+  `at '{remote_path}'` is omitted; `scp_pull` writes into the working
   directory using the basename of the remote path when
-  `to '{local_path}'` is omitted.
+  `to '{local_path}'` is omitted. Both handlers auto-detect directories:
+  `scp_push` checks the local source path, while `scp_pull` runs a
+  `test -d` probe on the target unit or machine; either way, directories
+  are transferred recursively by passing `-r` to the scp client
+  automatically. Both handlers accept a machine ID as the target in
+  addition to a unit name.
 - `wait_for` accepts fractional values (for example `'2.5'`).
 
 ## pytest-jubilant-bdd framework facts
