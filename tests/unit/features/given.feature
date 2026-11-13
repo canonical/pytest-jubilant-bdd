@@ -93,6 +93,9 @@ Feature: Reusable `given` steps
   Scenario: Environment variable is set
     Given environment variable 'AZURE_CLIENT_ID' is set
 
+  Scenario: Set environment variable
+    Given I set environment variable 'AZURE_CLIENT_SECRET' to 'fake-client-secret'
+
   Scenario: Add unit
     Given I add '3' units to app 'slurmctld'
 

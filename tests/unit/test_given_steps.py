@@ -16,6 +16,7 @@
 """Unit tests for reusable *Given* Gherkin steps."""
 
 import json
+import os
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import cast
@@ -1345,6 +1346,21 @@ class TestIsEnvVarSet:
             match="Environment variable 'AZURE_CLIENT_ID' is set to an empty value",
         ):
             is_env_var_set(context, "AZURE_CLIENT_ID")
+
+
+class TestSetEnvVar:
+    """Test the ``set_env_var`` *Given* step handler."""
+
+    @pytest.fixture(autouse=True)
+    def _restore_environment(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Register the injected variable with ``monkeypatch`` for cleanup."""
+        monkeypatch.delenv("AZURE_CLIENT_SECRET", raising=False)
+
+    @staticmethod
+    @scenario(REUSABLE_GIVEN_STEP_TESTS, "Set environment variable")
+    def test_sets_env_var() -> None:
+        """Test ``set_env_var`` injects the value into the environment."""
+        assert os.environ["AZURE_CLIENT_SECRET"] == "fake-client-secret"
 
 
 class TestIsAppConfigSet:
