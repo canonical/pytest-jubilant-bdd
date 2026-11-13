@@ -63,6 +63,9 @@ pytest-jubilant-bdd package include:
   configuration option to its default.
 * `set_app_config`: A `given` step handler for setting a configuration option
   on a deployed application.
+* `set_env_var`: A `given` step handler for setting an environment variable
+  in the test environment, making it visible to the test session and to any
+  `juju` CLI invocations made through `jubilant`.
 * `set_model_config`: A `given` step handler for setting a configuration
   option on a Juju model.
 * `store_host_architecture`: A `given` step handler for storing the host

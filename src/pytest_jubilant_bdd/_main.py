@@ -705,6 +705,13 @@ def is_env_var_set(context: Context, env_var: str) -> None:
         )
 
 
+@given(parsers.parse("I set environment variable '{env_var}' to '{value}'"))
+def set_env_var(context: Context, env_var: str, value: str) -> None:
+    """Set an environment variable in the test environment."""
+    os.environ[env_var] = value
+    logger.info("setting environment variable '%s'", env_var)
+
+
 @given(flexible("I reset '{option}' for app '{app}' " + OPTIONAL_MODEL_CLAUSE))
 def reset_app_config(
     context: Context,
