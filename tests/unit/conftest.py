@@ -39,7 +39,9 @@ def mock_subprocess_run(mocker: MockerFixture) -> MagicMock:
     """Mock `subprocess.run` in a test function."""
     mock = mocker.patch("subprocess.run")
     mock.return_value = MagicMock(
-        stdout="stdout patched by conftest.py", stderr="stderr patched by conftest.py"
+        returncode=0,
+        stdout="stdout patched by conftest.py",
+        stderr="stderr patched by conftest.py",
     )
 
     return mock
