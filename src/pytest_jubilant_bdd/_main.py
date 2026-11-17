@@ -22,7 +22,6 @@ import logging
 import os
 import platform
 import shlex
-import subprocess
 import time
 from collections.abc import Iterator, Mapping
 from pathlib import Path
@@ -45,6 +44,7 @@ from ._constants import (
     WorkloadStatus,
 )
 from ._context import Context
+from ._core import cli
 from ._parsers import flexible, make_dict, make_list, make_storage_directive
 from .errors import AppNotFoundError, TooManyDeployedAppsError, UnitNotFoundError
 
@@ -357,13 +357,7 @@ def pack_charm(context: Context, app: str, project_dir: str | None) -> None:
 
     project = Path(project_dir) if project_dir else Path.cwd()
     try:
-        subprocess.run(
-            ["charmcraft", "-v", "pack"],
-            cwd=project,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+        cli("charmcraft", "-v", "pack", cwd=project, check=True)
     except FileNotFoundError:
         raise FileNotFoundError("'charmcraft' is not installed or not found on PATH") from None
 
