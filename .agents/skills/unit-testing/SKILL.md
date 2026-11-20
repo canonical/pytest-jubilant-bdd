@@ -17,6 +17,7 @@ Write unit tests for the reusable Gherkin step handlers defined in `src/pytest_j
 3. **Read supporting source** — Understand the handler's dependencies:
    - `_main.py` — `Context` fixture (session-scoped) and all step handlers. Note: `Context` is publicly exported from `pytest_jubilant_bdd`; use `from pytest_jubilant_bdd import Context`.
    - `_context.py` — `Context` object, `ModelMapping`, `stack` class. Know the public API: `context.models`, `context.get_juju()`, `context.get_app()`, `context.wait()`, `context.action_results`, `context.exec_results`.
+   - `_core.py` — `cli` function for running host commands (for example `charmcraft pack`) with output streamed to the user's console by default; `cli` is publicly exported from `pytest_jubilant_bdd`.
    - `_parsers.py` — `flexible` parser, `make_list`, `make_dict` converters, `%...%` block syntax.
    - `_assertions.py` — `assertions.app`, `assertions.model`, `assertions.unit` assertion classes.
    - `_constants.py` — `AgentStatus`, `WorkloadStatus`, flag names, status capture group patterns.
@@ -111,7 +112,7 @@ class Test<Handler>:
 
 ### `mock_subprocess_run` (conftest.py)
 
-A function-scoped fixture from `conftest.py` that patches `subprocess.run`. It returns a `MagicMock` with default `stdout` and `stderr` values. Override `mock_subprocess_run.return_value` or `mock_subprocess_run.side_effect` to return custom JSON responses.
+A function-scoped fixture from `conftest.py` that patches `subprocess.run`. Because the `cli` helper in `_core.py` delegates to `subprocess.run`, the fixture intercepts `cli(...)` calls too. It returns a `MagicMock` with default `returncode=0`, `stdout`, and `stderr` values — the `returncode=0` default matters because `cli` raises `subprocess.CalledProcessError` when `check=True` and the return code is non-zero. Override `mock_subprocess_run.return_value` or `mock_subprocess_run.side_effect` to return custom JSON responses.
 
 ### `mock_status_json` (conftest.py)
 
@@ -285,6 +286,38 @@ task = context.action_results.peek()
 assert isinstance(task, Task)
 assert task.status == "completed"
 ```
+
+## Testing handlers that call `cli`
+
+Handlers run host commands — commands that do not go through a Juju
+model, for example `charmcraft pack` — through the `cli` helper from
+`_core.py`. `cli` delegates to `subprocess.run`, so `mock_subprocess_run`
+intercepts these calls like any other subprocess call. Assert the command
+shape with `mock_subprocess_run.call_args`, including keyword arguments:
+
+```python
+assert mock_subprocess_run.call_args[0][0] == [
+    "charmcraft",
+    "-v",
+    "pack",
+]
+assert mock_subprocess_run.call_args[1]["cwd"] == Path("/path/to/project")
+```
+
+With `stream=True` (the default), a real `cli` call streams output to the
+user's console and leaves `stdout`/`stderr` as `None` on the completed
+process — so tests must assert on call args, never on the mocked return
+value's output.
+
+Error paths:
+
+- Missing root command — set `mock_subprocess_run.side_effect =
+  FileNotFoundError`; the handler wraps it into its own
+  `FileNotFoundError` (see `test_raises_when_charmcraft_missing` in
+  `tests/unit/test_given_steps.py`).
+- Non-zero exit code — set `mock_subprocess_run.return_value.returncode`
+  to a non-zero value; with `check=True`, `cli` raises
+  `subprocess.CalledProcessError`.
 
 ## Asserting subprocess command shapes
 

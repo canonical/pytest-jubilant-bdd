@@ -12,7 +12,7 @@ This skill covers implementing a new reusable Gherkin step handler in `src/pytes
 
 1. **Pick the parser** — Choose `parsers.parse`, `flexible`, or `parsers.re` for the step pattern.
 2. **Write the handler** — Implement the handler function with proper error handling. If it uses `flexible`, follow the rules in. If it needs an embedded regex, use `%…%` blocks.
-3. **Wire into `_main.py`** — Place the handler under the correct comment block (Given/When/Then/Checkpoint). Ensure it uses `context.get_juju()` and pushes results to the appropriate stack for `when` steps.
+3. **Wire into `_main.py`** — Place the handler under the correct comment block (Given/When/Then/Checkpoint). Ensure it uses `context.get_juju()` for Juju commands and the `cli` helper for host commands, and pushes results to the appropriate stack for `when` steps.
 4. **Author feature scenarios** — Add a scenario for each happy-path test to `tests/unit/features/<keyword>.feature`.
 5. **Write unit tests** — Follow `.agents/skills/unit-testing/SKILL.md`.
 6. **Update `README.md`** — Add a bullet for the new public step.
@@ -338,6 +338,39 @@ Use `context.get_juju(model)` to obtain a per-model `jubilant.Juju` instance. It
 juju = context.get_juju(model)   # model-aware
 juju = context.get_juju()        # default (current) model
 ```
+
+### Running host commands
+
+Commands that do not go through a Juju model (for example `charmcraft
+pack`) use the module-level `cli` helper from `_core.py` — never
+`subprocess` directly. `cli` is also part of the plugin's public API
+(`from pytest_jubilant_bdd import cli`):
+
+```python
+from ._core import cli
+
+cli("charmcraft", "-v", "pack", cwd=project, check=True)
+```
+
+Key details:
+
+- `cli(root, /, *args, stdin=None, check=True, env=None, cwd=None,
+  stream=True)` returns a `subprocess.CompletedProcess[str]`.
+- `stream=True` (default): the command inherits the `pytest` process's
+  `stdout`/`stderr`, streaming output to the user's console as it runs;
+  the completed process's `stdout`/`stderr` are `None`. Prefer this for
+  long-running commands whose output users want to watch.
+- `stream=False`: output is captured, logged, and returned on the
+  completed process.
+- `check=True` (default): raises `subprocess.CalledProcessError` on a
+  non-zero exit code. A missing root command propagates
+  `FileNotFoundError` from `subprocess.run` — catch and re-raise it with
+  a friendly message.
+- Juju commands still go through `jubilant` (`juju.cli(...)`,
+  `juju.run(...)`, ...) on the `Juju` instance from
+  `context.get_juju()`.
+
+Reference handler: `pack_charm`.
 
 ### Accessing application state
 

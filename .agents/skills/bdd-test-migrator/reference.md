@@ -181,7 +181,8 @@ Notes:
   values pass through lowercased with underscores replaced by hyphens.
 - `pack_charm` skips `charmcraft pack` when the `<APP>_CHARM_PATH`
   environment variable is set; `deploy_local` reads the same environment
-  variable when `located at '{path}'` is omitted.
+  variable when `located at '{path}'` is omitted. When it does run,
+  `charmcraft pack` output streams live to the user's console.
 - `scp_to_unit` copies into the remote user's home directory when
   `at '{remote_path}'` is omitted; `scp_from_unit` writes into the working
   directory using the basename of the remote path when
@@ -195,8 +196,9 @@ Notes:
   handlers available to pytest-bdd. Consumers **never import the step
   handlers** — only the public API below.
 - **Public API** (`from pytest_jubilant_bdd import ...`): `Context`,
-  `assertions`, `flexible`, `make_dict`, `make_list`,
-  `make_storage_directive`. `Context` is the fixture type; the rest are
+  `assertions`, `cli`, `flexible`, `make_dict`, `make_list`,
+  `make_storage_directive`. `Context` is the fixture type; `cli` runs
+  host commands with output streamed to the user's console; the rest are
   helpers for authoring custom steps.
 - **The `context` fixture** (session-scoped, provided by the plugin) yields
   a `Context` object. It replaces a hand-rolled `juju` fixture — do **not**
@@ -548,6 +550,7 @@ The essentials:
 | `context.models` | `ModelMapping` of models added via `Given I add model ...` |
 | `context.default_model` | Set via `Given I switch to model ...` |
 | `assertions.app` / `.model` / `.unit` / `.storage` | Reusable assertion helpers — the same ones backing the built-in checkpoint handlers. |
+| `cli(root, *args, ...)` | Run a host command (not through Juju) with output streamed live to the user's console. `stream=False` captures and logs output instead; `check=True` (default) raises `subprocess.CalledProcessError` on a non-zero exit code. |
 
 Stack API: `push()`, `pop()`, `peek()`, `is_empty()`, `len()`.
 
