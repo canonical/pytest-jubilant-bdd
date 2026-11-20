@@ -277,24 +277,32 @@ examples:
 Generates a `Scenario Outline:` with an `Examples:` table; pytest-bdd runs
 one test per row.
 
-## Example 6: Pushing and pulling files with `scp`
+## Example 6: Pushing and pulling files and directories with `scp`
 
-Use the built-in `scp_to_unit` / `scp_from_unit` handlers instead of
+Use the built-in `scp_push` / `scp_pull` handlers instead of
 hand-rolling `juju scp` calls in custom steps:
 
 ```yaml
 scenarios:
   - |-
-    Push a config file and pull back a log file
+    Push benchmark assets and pull back a log file
 
     Given 'foo' is deployed
-    When I copy 'tests/integration/assets/config.yaml' to unit 'foo/0' at '/etc/foo/config.yaml'
+    When I copy 'tests/integration/assets/benchmarks' to unit 'foo/0' at '/home/ubuntu/benchmarks'
+    And I copy 'tests/integration/assets/config.yaml' to unit 'foo/0' at '/etc/foo/config.yaml'
     And I copy '/var/log/foo.log' from unit 'foo/0' to 'tests/integration/assets/foo.log'
     Then the pulled log file mentions the pushed config
 ```
 
 Notes:
 
+- Transfers auto-detect directories: a directory source such as
+  `tests/integration/assets/benchmarks` is copied recursively (`-r` is
+  passed to the scp client automatically). `scp_pull` detects a
+  directory on the target unit or machine with a `test -d` probe before
+  copying.
+- Both handlers accept a machine ID in place of a unit name, for example
+  `When I copy 'benchmarks' to machine '0'`.
 - `at '{remote_path}'` omitted → the file lands in the remote user's home
   directory.
 - `to '{local_path}'` omitted → the file is written into the working
