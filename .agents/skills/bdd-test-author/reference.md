@@ -161,12 +161,10 @@ Notes:
 - `scp_push` copies into the remote user's home directory when
   `at '{remote_path}'` is omitted; `scp_pull` writes into the working
   directory using the basename of the remote path when
-  `to '{local_path}'` is omitted. Both handlers auto-detect directories:
-  `scp_push` checks the local source path, while `scp_pull` runs a
-  `test -d` probe on the target unit or machine; either way, directories
-  are transferred recursively by passing `-r` to the scp client
-  automatically. Both handlers accept a machine ID as the target in
-  addition to a unit name.
+  `to '{local_path}'` is omitted. Both handlers always pass `-r` to the
+  scp client, so directories are transferred recursively; `-r` has no
+  effect on plain files. Both handlers accept a machine ID as the target
+  in addition to a unit name.
 - `wait_for` accepts fractional values (for example `'2.5'`).
 
 ## pytest-jubilant-bdd framework facts

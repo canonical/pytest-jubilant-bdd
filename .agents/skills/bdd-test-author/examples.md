@@ -296,11 +296,9 @@ scenarios:
 
 Notes:
 
-- Transfers auto-detect directories: a directory source such as
-  `tests/integration/assets/benchmarks` is copied recursively (`-r` is
-  passed to the scp client automatically). `scp_pull` detects a
-  directory on the target unit or machine with a `test -d` probe before
-  copying.
+- Transfers always pass `-r` to the scp client, so a directory source
+  such as `tests/integration/assets/benchmarks` is copied recursively;
+  `-r` has no effect on plain files.
 - Both handlers accept a machine ID in place of a unit name, for example
   `When I copy 'benchmarks' to machine '0'`.
 - `at '{remote_path}'` omitted → the file lands in the remote user's home

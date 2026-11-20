@@ -876,14 +876,13 @@ def scp_push(
     Notes:
         - When ``at '{remote_path}'`` is omitted, the file is copied into the
           remote user's home directory on the target unit or machine.
-        - When ``source`` is a directory, it is transferred recursively by
-          passing ``-r`` to the ``scp`` client automatically.
+        - The transfer always passes ``-r`` to the ``scp`` client, so
+          directories are copied recursively; ``-r`` has no effect on plain
+          files.
     """
     source_path = Path(source)
     if not source_path.exists():
         raise FileNotFoundError(f"Source not found: '{source}' does not exist") from None
-
-    scp_options = ["-r"] if source_path.is_dir() else []
 
     juju = context.get_juju(model)
 
@@ -892,19 +891,18 @@ def scp_push(
     else:
         destination = f"{target}:{remote_path}"
 
-    juju.scp(source, destination, scp_options=scp_options)
+    juju.scp(source, destination, scp_options=["-r"])
 
 
 @when(
     flexible(
-        r"I copy '{remote_path}' from %(?P<type_>machine|unit) '(?P<target>[^']+)'% "
+        r"I copy '{remote_path}' from %(?:machine|unit) '(?P<target>[^']+)'% "
         r"[to '{local_path}'] " + OPTIONAL_MODEL_CLAUSE
     ),
 )
 def scp_pull(
     context: Context,
     remote_path: str,
-    type_: str,
     target: str,
     local_path: str | None,
     model: str | None,
@@ -914,27 +912,16 @@ def scp_pull(
     Notes:
         - When ``to '{local_path}'`` is omitted, the file is written into
           the working directory using the basename of the remote path.
-        - Whether ``remote_path`` is a directory is detected with a
-          ``test -d`` probe run on the target unit or machine; directories
-          are transferred recursively by passing ``-r`` to the ``scp``
-          client automatically.
+        - The transfer always passes ``-r`` to the ``scp`` client, so
+          directories are copied recursively; ``-r`` has no effect on plain
+          files.
     """
     juju = context.get_juju(model)
-
-    try:
-        match type_:
-            case "machine":
-                juju.exec(f"test -d {shlex.quote(remote_path)}", machine=target)
-            case "unit":
-                juju.exec(f"test -d {shlex.quote(remote_path)}", unit=target)
-        scp_options = ["-r"]
-    except TaskError:
-        scp_options = []
 
     if local_path is None:
         local_path = Path(remote_path).name
 
-    juju.scp(f"{target}:{remote_path}", local_path, scp_options=scp_options)
+    juju.scp(f"{target}:{remote_path}", local_path, scp_options=["-r"])
 
 
 # Checkpoint steps - Attestation and verification.
