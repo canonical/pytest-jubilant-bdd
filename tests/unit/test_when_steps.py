@@ -15,6 +15,7 @@
 
 """Unit tests for reusable *When* Gherkin steps."""
 
+import subprocess
 from unittest.mock import MagicMock
 
 import pytest
@@ -27,7 +28,7 @@ from pytest_bdd import scenario
 from pytest_jubilant_bdd import Context
 
 # ruff: disable[SLF001]
-from pytest_jubilant_bdd._main import scp_to_unit
+from pytest_jubilant_bdd._main import run_ssh, scp_to_unit
 
 # ruff: enable[SLF001]
 
@@ -129,6 +130,7 @@ class TestRunAction:
             assert "--model" in call.args[0]
             assert f"test-{MODEL_SUFFIX}" in call.args[0]
             assert "--params" in call.args[0]
+            assert call.args[0][8:10] == ["--wait", "45.0s"]
 
         assert len(context.action_results) == 3
 
@@ -186,6 +188,7 @@ class TestRunExec:
             assert "--model" in call.args[0]
             assert f"test-{MODEL_SUFFIX}" in call.args[0]
             assert "--unit" in call.args[0]
+            assert call.args[0][8:10] == ["--wait", "45.0s"]
 
         assert len(context.exec_results) == 3
 
@@ -267,7 +270,21 @@ class TestRunSSH:
         assert call_args[4] == "slurmctld/0"
         assert call_args[5] == "hostname"
 
+        # The timeout rides in as a `subprocess.run` keyword argument, not as a CLI flag.
+        assert ssh_calls[0].kwargs["timeout"] == 45.0
+
         assert len(context.ssh_results) == 1
+
+    def test_raises_when_ssh_times_out(
+        self, context: Context, mock_subprocess_run: MagicMock
+    ) -> None:
+        """``run_ssh`` raises ``TimeoutError`` when the ssh command exceeds the clause."""
+        mock_subprocess_run.side_effect = subprocess.TimeoutExpired(
+            cmd=["juju", "ssh", "slurmctld/0", "hostname"], timeout=30.0
+        )
+
+        with pytest.raises(TimeoutError, match="did not complete within 30"):
+            run_ssh(context, "unit", "slurmctld/0", "hostname", None, 30.0)
 
 
 class TestScpToUnit:
