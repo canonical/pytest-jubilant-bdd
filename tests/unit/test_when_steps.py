@@ -131,14 +131,13 @@ class TestRunAction:
         ]
         assert len(run_calls) == 3
 
-        units_called = [call.args[0][6] for call in run_calls]
-        assert units_called == ["slurmctld/0", "slurmctld/1", "slurmctld/2"]
-
-        for call in run_calls:
+        for call, unit in zip(run_calls, ["slurmctld/0", "slurmctld/1", "slurmctld/2"]):
+            assert unit in call.args[0]
             assert "--model" in call.args[0]
             assert f"test-{MODEL_SUFFIX}" in call.args[0]
             assert "--params" in call.args[0]
-            assert call.args[0][8:10] == ["--wait", "45.0s"]
+            wait_idx = call.args[0].index("--wait")
+            assert call.args[0][wait_idx + 1] == "45.0s"
 
         assert len(context.action_results) == 3
 
@@ -189,14 +188,13 @@ class TestRunExec:
         ]
         assert len(exec_calls) == 3
 
-        units_called = [call.args[0][7] for call in exec_calls]
-        assert units_called == ["slurmd/0", "slurmd/1", "slurmd/2"]
-
-        for call in exec_calls:
+        for call, unit in zip(exec_calls, ["slurmd/0", "slurmd/1", "slurmd/2"]):
+            assert unit in call.args[0]
             assert "--model" in call.args[0]
             assert f"test-{MODEL_SUFFIX}" in call.args[0]
             assert "--unit" in call.args[0]
-            assert call.args[0][8:10] == ["--wait", "45.0s"]
+            wait_idx = call.args[0].index("--wait")
+            assert call.args[0][wait_idx + 1] == "45.0s"
 
         assert len(context.exec_results) == 3
 
@@ -210,9 +208,8 @@ class TestRunExec:
             if call.args[0] and call.args[0][0:2] == ["juju", "exec"]
         ]
         assert len(exec_calls) == 2
-        # Without --model the unit is at index 5, command at 7.
-        units_called = [call.args[0][5] for call in exec_calls]
-        assert units_called == ["slurmd/0", "slurmd/1"]
+        for call, unit in zip(exec_calls, ["slurmd/0", "slurmd/1"]):
+            assert unit in call.args[0]
 
         assert len(context.exec_results) == 2
 
@@ -275,8 +272,7 @@ class TestRunSSH:
         call_args = ssh_calls[0].args[0]
         assert "--model" in call_args
         assert f"test-{MODEL_SUFFIX}" in call_args
-        assert call_args[4] == "slurmctld/0"
-        assert call_args[5] == "hostname"
+        assert call_args[-2:] == ["slurmctld/0", "hostname"]
 
         # The timeout rides in as a `subprocess.run` keyword argument, not as a CLI flag.
         assert ssh_calls[0].kwargs["timeout"] == 45.0
