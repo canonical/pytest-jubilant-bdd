@@ -352,6 +352,22 @@ assert mock_subprocess_run.call_args[0][0] == [
 ]
 ```
 
+When a command includes optional clauses (model, wait, params), do not use hardcoded positional indices to pluck values out of the args list — the order of CLI arguments may change. Use order-invariant assertions instead:
+
+```python
+# Flag values: locate the flag with `.index()`, then assert the value that follows it.
+wait_idx = call.args[0].index("--wait")
+assert call.args[0][wait_idx + 1] == "45.0s"
+
+# Positional values (for example, units): pair each call with the value it
+# is expected to carry and assert membership.
+for call, unit in zip(run_calls, ["slurmctld/0", "slurmctld/1", "slurmctld/2"]):
+    assert unit in call.args[0]
+
+# Trailing positional arguments: assert the tail of the args list.
+assert call_args[-2:] == ["slurmctld/0", "hostname"]
+```
+
 ## Encountering bugs
 
 If you encounter a bug in the production code (`src/pytest_jubilant_bdd/`) while writing unit tests, follow this protocol:
@@ -384,6 +400,7 @@ with pytest.raises((AssertionError, ModelNotFoundError)):
 - DO NOT silently fix bugs in the codebase. STOP and ask the user before making changes.
 - DO use `@scenario` for happy-path tests. It ensures the Gherkin step is correctly parsed and the handler is properly invoked.
 - DO use `mock_subprocess_run.call_args` and `mock_subprocess_run.call_args_list` to verify the exact CLI arguments.
+- DO use order-invariant assertions (`.index()` for flag values, membership checks for positional values) instead of hardcoded positional indices when the command includes optional clauses.
 - DO use the `stack` public API: `len()`, `peek()`, `is_empty()`, `push()`, `pop()`.
 - DO use the `helpers.py` functions (`make_status_json`, `make_app_with_relation`, `make_app_without_relation`, `make_task_json`) for constructing mock data.
 - DO use `constants.py` only for path constants and `MODEL_SUFFIX`.
