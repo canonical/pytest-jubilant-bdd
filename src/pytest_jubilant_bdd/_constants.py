@@ -23,6 +23,7 @@ DEFAULT_WAIT_TIMEOUT = 3 * 60.0
 
 OPTIONAL_MODEL_CLAUSE = "[in model '{model}']"
 OPTIONAL_TIMEOUT_CLAUSE = "[within '{timeout}' seconds]"
+OPTIONAL_COMPLETION_TIMEOUT_CLAUSE = "[%(it completes)? %within '{wait}' seconds]"
 
 type AgentStatus = Literal["allocating", "executing", "error", "idle", "lost"]
 type WorkloadStatus = Literal["active", "blocked", "error", "maintenance", "waiting"]
