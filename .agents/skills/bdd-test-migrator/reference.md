@@ -141,10 +141,10 @@ handler is registered under.
 | Step phrasing | Handler | Result stack |
 |----------------|---------|--------------|
 | `I run action '{action}' on unit[s] '{u1}', '{u2}', and '{u3}' [with parameters '{k=v ...}'] [in model '{model}'] [within '{wait}' seconds]` | `run_action` | `context.action_results` |
-| `I execute '{command}' on machine[s] '{m1}' and '{m2}' [in model '{model}'] [within '{wait}' seconds]` | `run_exec` | `context.exec_results` |
-| `I execute '{command}' on unit[s] '{u1}' and '{u2}' [in model '{model}'] [within '{wait}' seconds]` | `run_exec` | `context.exec_results` |
-| `I ssh into machine '{m}' and I execute '{command}' [in model '{model}'] [within '{wait}' seconds]` | `run_ssh` | `context.ssh_results` |
-| `I ssh into unit '{u}' and I execute '{command}' [in model '{model}'] [within '{wait}' seconds]` | `run_ssh` | `context.ssh_results` |
+| `I execute '{command}' on machine[s] '{m1}' and '{m2}' [as user '{user}'] [in model '{model}'] [within '{wait}' seconds]` | `run_exec` | `context.exec_results` |
+| `I execute '{command}' on unit[s] '{u1}' and '{u2}' [as user '{user}'] [in model '{model}'] [within '{wait}' seconds]` | `run_exec` | `context.exec_results` |
+| `I ssh into machine '{m}' and I execute '{command}' [as user '{user}'] [in model '{model}'] [within '{wait}' seconds]` | `run_ssh` | `context.ssh_results` |
+| `I ssh into unit '{u}' and I execute '{command}' [as user '{user}'] [in model '{model}'] [within '{wait}' seconds]` | `run_ssh` | `context.ssh_results` |
 | `I copy '{source}' to machine '{m}' [at '{remote_path}'] [in model '{model}']` | `scp_push` | — |
 | `I copy '{source}' to unit '{unit}' [at '{remote_path}'] [in model '{model}']` | `scp_push` | — |
 | `I copy '{remote_path}' from machine '{m}' [to '{local_path}'] [in model '{model}']` | `scp_pull` | — |
@@ -163,6 +163,12 @@ Notes:
 - The completion-timeout clause is independent of the global
   `--juju-bdd-wait-timeout`, which only affects polling-based checkpoint
   steps.
+- The optional `as user '{user}'` clause on `run_exec` and `run_ssh` runs
+  the command as that user by wrapping it with
+  `sudo -u <user> sh -c <command>` — `juju exec` runs commands as root and
+  `juju ssh` connects as the `ubuntu` user, and both have passwordless
+  `sudo` access. Useful for security testing that simulates unprivileged
+  users.
 
 ### Checkpoints (attestation)
 
@@ -216,10 +222,12 @@ Notes:
   handlers available to pytest-bdd. Consumers **never import the step
   handlers** — only the public API below.
 - **Public API** (`from pytest_jubilant_bdd import ...`): `Context`,
-  `assertions`, `cli`, `flexible`, `make_dict`, `make_list`,
-  `make_storage_directive`. `Context` is the fixture type; `cli` runs
-  host commands with output streamed to the user's console; the rest are
-  helpers for authoring custom steps.
+  `assertions`, `cli`, `command_as_user`, `flexible`, `make_dict`,
+  `make_list`, `make_storage_directive`. `Context` is the fixture type;
+  `cli` runs host commands with output streamed to the user's console;
+  `command_as_user` wraps a command as `sudo -u <user> sh -c <command>` so
+  it runs as an unprivileged user; the rest are helpers for authoring
+  custom steps.
 - **The `context` fixture** (session-scoped, provided by the plugin) yields
   a `Context` object. It replaces a hand-rolled `juju` fixture — do **not**
   define a `juju` fixture in the charm repo's `conftest.py`.

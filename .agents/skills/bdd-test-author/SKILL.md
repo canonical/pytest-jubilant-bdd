@@ -203,7 +203,9 @@ Key facts:
   (bare form: `within '{wait}' seconds`) bounding the invocation — forwarded
   to jubilant's `wait` parameter for `run_action`/`run_exec`, and enforced by
   killing the local `juju ssh` client for `run_ssh` — independent of the
-  global `--juju-bdd-wait-timeout`.
+  global `--juju-bdd-wait-timeout`. `run_exec` and `run_ssh` also accept an
+  optional `as user '{user}'` clause that runs the command as that user by
+  wrapping it with `sudo -u <user> sh -c <command>`.
 - Several handlers are dual-registered as `Given` and `When` (`add_unit`,
   `integrate`, `disintegrate`, `remove_app`, `remove_unit`), so the same
   phrasing works in either stanza.
