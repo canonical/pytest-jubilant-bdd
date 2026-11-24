@@ -46,7 +46,7 @@ from ._constants import (
     WorkloadStatus,
 )
 from ._context import Context
-from ._core import cli
+from ._core import cli, command_as_user
 from ._parsers import flexible, make_dict, make_list, make_storage_directive
 from .errors import AppNotFoundError, TooManyDeployedAppsError, UnitNotFoundError
 
@@ -808,10 +808,8 @@ def run_action(
 
 @when(
     flexible(
-        r"I execute '{command}' on %(?P<type_>machines?|units?) (?P<targets>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)%"
-        + OPTIONAL_MODEL_CLAUSE
-        + " "
-        + OPTIONAL_COMPLETION_TIMEOUT_CLAUSE
+        r"I execute '{command}' on %(?P<type_>machines?|units?) (?P<targets>(?:'([^']+)'(?:, (?:and )?|\s+and )?)+)% "
+        r"[as user '{user}'] " + OPTIONAL_MODEL_CLAUSE + " " + OPTIONAL_COMPLETION_TIMEOUT_CLAUSE
     ),
     converters={
         "targets": make_list,
@@ -824,10 +822,17 @@ def run_exec(
     type_: str,
     targets: list[str | int],
     model: str | None,
+    user: str | None = None,
     wait: float | None = None,
 ) -> None:
-    """Run remote commands on provided targets."""
+    """Run remote commands on provided targets.
+
+    Notes:
+        - When the optional ``as user '{user}'`` clause is provided, the command is
+          executed as that user with ``sudo``. Runs as root by default.
+    """
     juju = context.get_juju(model)
+    command = command_as_user(command, user)
 
     for target in targets:
         try:
@@ -847,10 +852,8 @@ def run_exec(
 @when(
     flexible(
         r"I ssh into %(?P<type_>machine|unit) '(?P<target>[^']+)'% "
-        r"and I execute '{command}'"
-        + OPTIONAL_MODEL_CLAUSE
-        + " "
-        + OPTIONAL_COMPLETION_TIMEOUT_CLAUSE
+        r"and I execute '{command}' "
+        r"[as user '{user}'] " + OPTIONAL_MODEL_CLAUSE + " " + OPTIONAL_COMPLETION_TIMEOUT_CLAUSE
     ),
     converters={"wait": lambda v: float(v) if v is not None else None},
 )
@@ -860,15 +863,24 @@ def run_ssh(
     target: str | int,
     command: str,
     model: str | None,
+    user: str | None = None,
     wait: float | None = None,
 ) -> None:
-    """SSH into a machine or unit and execute a command."""
+    """SSH into a machine or unit and execute a command.
+
+    Notes:
+        - When the optional ``as user '{user}'`` clause is provided, the command is
+          executed as that user with ``sudo``. Runs as the ``ubuntu`` user that ``juju ssh``
+          connects as by default.
+    """
     juju = context.get_juju(model)
 
     if type_ == "machine":
         target = int(target)
 
-    result = _ssh_with_timeout(juju, target=target, command=command, timeout=wait)
+    result = _ssh_with_timeout(
+        juju, target=target, command=command_as_user(command, user), timeout=wait
+    )
     context.ssh_results.push(result)
 
 

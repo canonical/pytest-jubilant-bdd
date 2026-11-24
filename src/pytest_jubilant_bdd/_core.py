@@ -14,7 +14,7 @@
 
 """Core utilities used within ``pytest-jubilant-bdd``."""
 
-__all__ = ["cli"]
+__all__ = ["cli", "command_as_user"]
 
 import logging
 import shlex
@@ -85,6 +85,22 @@ def cli(
         )
 
     return result
+
+
+def command_as_user(command: str, user: str | None) -> str:
+    """Wrap *command* so that it executes as *user* when a user is provided.
+
+    Args:
+        command: The command to wrap.
+        user: The user to run *command* as. If ``None``, *command* is returned unchanged.
+
+    Returns:
+        The wrapped command, or *command* unchanged when *user* is ``None``.
+    """
+    if user is None:
+        return command
+
+    return f"sudo -u {user} sh -c {shlex.quote(command)}"
 
 
 def _log_command_result(

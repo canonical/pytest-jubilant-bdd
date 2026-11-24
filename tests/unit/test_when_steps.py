@@ -199,19 +199,24 @@ class TestRunExec:
         assert len(context.exec_results) == 3
 
     @staticmethod
-    @scenario(REUSABLE_WHEN_STEP_TESTS, "Exec command on two units without comma")
-    def test_without_comma(context: Context, mock_subprocess_run: MagicMock) -> None:
-        """Test ``run_exec`` with comma-free ``and`` list syntax."""
+    @scenario(REUSABLE_WHEN_STEP_TESTS, "Exec command on machine as user in model")
+    def test_as_user(context: Context, mock_subprocess_run: MagicMock) -> None:
+        """Test ``run_exec`` with the optional ``as user`` clause."""
         exec_calls = [
             call
             for call in mock_subprocess_run.call_args_list
             if call.args[0] and call.args[0][0:2] == ["juju", "exec"]
         ]
-        assert len(exec_calls) == 2
-        for call, unit in zip(exec_calls, ["slurmd/0", "slurmd/1"]):
-            assert unit in call.args[0]
+        assert len(exec_calls) == 1
 
-        assert len(context.exec_results) == 2
+        call_args = exec_calls[0].args[0]
+        assert call_args[-2:] == ["--", "sudo -u nobody sh -c 'cat /etc/shadow'"]
+        assert "--model" in call_args
+        assert f"test-{MODEL_SUFFIX}" in call_args
+        wait_idx = call_args.index("--wait")
+        assert call_args[wait_idx + 1] == "45.0s"
+
+        assert len(context.exec_results) == 1
 
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "Exec failing command on one machine")
@@ -272,9 +277,8 @@ class TestRunSSH:
         call_args = ssh_calls[0].args[0]
         assert "--model" in call_args
         assert f"test-{MODEL_SUFFIX}" in call_args
-        assert call_args[-2:] == ["slurmctld/0", "hostname"]
+        assert call_args[-2:] == ["slurmctld/0", "sudo -u nobody sh -c hostname"]
 
-        # The timeout rides in as a `subprocess.run` keyword argument, not as a CLI flag.
         assert ssh_calls[0].kwargs["timeout"] == 45.0
 
         assert len(context.ssh_results) == 1
@@ -288,7 +292,7 @@ class TestRunSSH:
         )
 
         with pytest.raises(TimeoutError, match="did not complete within 30"):
-            run_ssh(context, "unit", "slurmctld/0", "hostname", None, 30.0)
+            run_ssh(context, "unit", "slurmctld/0", "hostname", None, wait=30.0)
 
 
 class TestScpPush:

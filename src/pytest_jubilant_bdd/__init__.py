@@ -22,6 +22,7 @@ __all__ = [
     "Context",
     "assertions",
     "cli",
+    "command_as_user",
     "flexible",
     "make_dict",
     "make_list",
@@ -30,5 +31,5 @@ __all__ = [
 
 from ._assertions import assertions
 from ._context import Context
-from ._core import cli
+from ._core import cli, command_as_user
 from ._parsers import flexible, make_dict, make_list, make_storage_directive

@@ -17,14 +17,14 @@ Feature: Reusable `when` steps
   Scenario: Exec command on one machine
     When I execute 'hostname' on machine '0'
 
-  Scenario: Exec command on two units without comma
-    When I execute 'hostname' on units 'slurmd/0' and 'slurmd/1'
-
   Scenario: Exec command on multiple units in model
     When I execute 'systemctl restart slurmd' on units 'slurmd/0', 'slurmd/1', and 'slurmd/2' in model 'test' within '45' seconds
 
   Scenario: Exec failing command on one machine
     When I execute 'exit 2' on machine '0'
+
+  Scenario: Exec command on machine as user in model
+    When I execute 'cat /etc/shadow' on machine '0' as user 'nobody' in model 'test' within '45' seconds
 
   Scenario: SSH into machine and execute command
     When I ssh into machine '0' and I execute 'hostname'
@@ -36,7 +36,7 @@ Feature: Reusable `when` steps
     When I ssh into unit 'slurmctld/0' and I execute 'hostname'
 
   Scenario: SSH into unit and execute command in model
-    When I ssh into unit 'slurmctld/0' and I execute 'hostname' in model 'test' and it completes within '45' seconds
+    When I ssh into unit 'slurmctld/0' and I execute 'hostname' as user 'nobody' in model 'test' and it completes within '45' seconds
 
   Scenario: Copy file to unit
     When I copy '/tmp/sbatch_sleep_job.sh' to unit 'login/0'
