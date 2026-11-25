@@ -15,9 +15,12 @@
 
 """Unit tests for the ``flexible`` parser and step converters."""
 
-import pytest
+from pathlib import Path
 
-from pytest_jubilant_bdd import flexible, make_storage_directive
+import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem
+
+from pytest_jubilant_bdd import flexible, make_path, make_storage_directive
 
 
 class TestFlexible:
@@ -125,3 +128,32 @@ class TestMakeStorage:
         """``make_storage_directive`` raises when a directive has an empty value."""
         with pytest.raises(ValueError, match="storage directive value is empty"):
             make_storage_directive("osd-standalone=")
+
+
+class TestMakePath:
+    """Test the ``make_path`` path converter."""
+
+    def test_returns_none_when_value_is_none(self) -> None:
+        """Test that ``make_path`` returns ``None`` when the optional clause is absent."""
+        assert make_path(None) is None
+
+    def test_returns_path_when_file_exists(self, fs: FakeFilesystem) -> None:
+        """Test that ``make_path`` returns a ``Path`` when the file exists."""
+        fs.create_file("/home/ubuntu/.ssh/juju_id_ed25519")
+
+        assert make_path("/home/ubuntu/.ssh/juju_id_ed25519") == Path(
+            "/home/ubuntu/.ssh/juju_id_ed25519"
+        )
+
+    def test_returns_path_when_directory_exists(self, fs: FakeFilesystem) -> None:
+        """Test that ``make_path`` accepts directories as well as plain files."""
+        fs.create_dir("/tmp/reframe_benchmarks")
+
+        assert make_path("/tmp/reframe_benchmarks") == Path("/tmp/reframe_benchmarks")
+
+    def test_raises_when_path_does_not_exist(self, fs: FakeFilesystem) -> None:
+        """Test that ``make_path`` raises when the path does not exist."""
+        with pytest.raises(
+            FileNotFoundError, match="File or directory not found: '/does/not/exist'"
+        ):
+            make_path("/does/not/exist")
