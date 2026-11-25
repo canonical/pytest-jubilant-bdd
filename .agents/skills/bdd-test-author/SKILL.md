@@ -205,7 +205,13 @@ Key facts:
   killing the local `juju ssh` client for `run_ssh` — independent of the
   global `--juju-bdd-wait-timeout`. `run_exec` and `run_ssh` also accept an
   optional `as user '{user}'` clause that runs the command as that user by
-  wrapping it with `sudo -u <user> sh -c <command>`.
+  wrapping it with `sudo -u <user> sh -c <command>`. `run_ssh`, `scp_push`,
+  and `scp_pull` also accept an optional
+  `us(e|ing) (identity|private key) file '{file}'` clause that passes a
+  custom private SSH key/identity file to the underlying OpenSSH/`scp`
+  client through its `-i` option; the `make_path` converter verifies the
+  file exists when the step is parsed and raises `FileNotFoundError` when
+  it does not.
 - Several handlers are dual-registered as `Given` and `When` (`add_unit`,
   `integrate`, `disintegrate`, `remove_app`, `remove_unit`), so the same
   phrasing works in either stanza.

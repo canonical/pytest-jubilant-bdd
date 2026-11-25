@@ -305,6 +305,13 @@ Notes:
   directory.
 - `to '{local_path}'` omitted → the file is written into the working
   directory using the basename of the remote path.
+- Both handlers (and `run_ssh`) accept an optional
+  `us(e|ing) (identity|private key) file '{file}'` clause for deployments
+  that use a custom SSH key-pair instead of the one created by Juju, for
+  example `When I copy 'config.yaml' to unit 'foo/0' using identity file
+  '~/.ssh/juju_custom_key'`. The `make_path` converter verifies the file
+  exists when the step is parsed and raises `FileNotFoundError` when it
+  does not.
 - The final `Then` is a custom step reading the pulled local file:
 
 ```python
