@@ -24,7 +24,7 @@ import platform
 import shlex
 import subprocess
 import time
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
 from typing import Any, cast
 
@@ -47,7 +47,7 @@ from ._constants import (
 )
 from ._context import Context
 from ._core import cli, command_as_user
-from ._parsers import flexible, make_dict, make_list, make_storage_directive
+from ._parsers import flexible, make_dict, make_list, make_path, make_storage_directive
 from .errors import AppNotFoundError, TooManyDeployedAppsError, UnitNotFoundError
 
 logger = logging.getLogger("pytest-jubilant-bdd")
@@ -432,7 +432,7 @@ def deploy(
         "[with %storage?% '{storage}'] " + OPTIONAL_MODEL_CLAUSE
     ),
     converters={
-        "path": lambda v: Path(v) if v is not None else v,
+        "path": make_path,
         "num_units": lambda v: int(v) if v is not None else 1,
         "machines": lambda v: [str(machine) for machine in make_list(v)],
         "config": make_dict,
@@ -467,9 +467,6 @@ def deploy_local(
                 f"the local '*.charm' file, or provide a path in the Gherkin step "
                 f"(\"I deploy '{app}' from a local charm located at '<path>'\")"
             ) from None
-
-    if not path.is_file():
-        raise FileNotFoundError(f"Charm not found: '{path}' is not a file") from None
 
     _deploy(
         context,
@@ -853,9 +850,13 @@ def run_exec(
     flexible(
         r"I ssh into %(?P<type_>machine|unit) '(?P<target>[^']+)'% "
         r"and I execute '{command}' "
-        r"[as user '{user}'] " + OPTIONAL_MODEL_CLAUSE + " " + OPTIONAL_COMPLETION_TIMEOUT_CLAUSE
+        r"[as user '{user}'] "
+        r"[%us(?:e|ing) (?:identity|private key)% file '{identity_file}'] "
+        + OPTIONAL_MODEL_CLAUSE
+        + " "
+        + OPTIONAL_COMPLETION_TIMEOUT_CLAUSE
     ),
-    converters={"wait": lambda v: float(v) if v is not None else None},
+    converters={"wait": lambda v: float(v) if v is not None else None, "identity_file": make_path},
 )
 def run_ssh(
     context: Context,
@@ -863,8 +864,9 @@ def run_ssh(
     target: str | int,
     command: str,
     model: str | None,
-    user: str | None = None,
-    wait: float | None = None,
+    user: str | None,
+    wait: float | None,
+    identity_file: Path | None,
 ) -> None:
     """SSH into a machine or unit and execute a command.
 
@@ -878,8 +880,16 @@ def run_ssh(
     if type_ == "machine":
         target = int(target)
 
+    ssh_options: list[str] = []
+    if identity_file is not None:
+        ssh_options.extend(["-i", str(identity_file)])
+
     result = _ssh_with_timeout(
-        juju, target=target, command=command_as_user(command, user), timeout=wait
+        juju,
+        target=target,
+        command=command_as_user(command, user),
+        timeout=wait,
+        ssh_options=ssh_options,
     )
     context.ssh_results.push(result)
 
@@ -891,6 +901,7 @@ def _ssh_with_timeout(
     target: str | int,
     command: str,
     timeout: float | None = None,
+    ssh_options: Iterable[str] = (),
 ) -> str:
     """Run ``juju ssh`` with a client-side wall-clock timeout.
 
@@ -899,6 +910,7 @@ def _ssh_with_timeout(
         target: Remote target to execute ``command`` on.
         command: Command to execute on ``target``.
         timeout: Optional wait timeout for executed command.
+        ssh_options: ``ssh`` client options, for example ``["-i", "/path/to/identity-file"]``
 
     Warnings:
         - If ``TimeoutError`` is raised, the local ``juju ssh`` process will be killed,
@@ -909,7 +921,7 @@ def _ssh_with_timeout(
         TimeoutError: Raised if the ssh command does not complete within *timeout* seconds.
     """
     try:
-        stdout, _ = juju._cli("ssh", str(target), command, timeout=timeout)  # noqa: SLF001
+        stdout, _ = juju._cli("ssh", str(target), *ssh_options, command, timeout=timeout)  # noqa: SLF001
     except subprocess.TimeoutExpired:
         raise TimeoutError(f"juju ssh '{command}' did not complete within {timeout}s") from None
 
@@ -919,8 +931,10 @@ def _ssh_with_timeout(
 @when(
     flexible(
         r"I copy '{source}' to %(?:machine|unit) '(?P<target>[^']+)'% "
-        r"[at '{remote_path}'] " + OPTIONAL_MODEL_CLAUSE
+        r"[at '{remote_path}'] "
+        r"[%us(?:e|ing) (?:identity|private key)% file '{identity_file}'] " + OPTIONAL_MODEL_CLAUSE
     ),
+    converters={"identity_file": make_path},
 )
 def scp_push(
     context: Context,
@@ -928,6 +942,7 @@ def scp_push(
     target: str,
     remote_path: str | None,
     model: str | None,
+    identity_file: Path | None,
 ) -> None:
     """Copy a local file or directory to a deployed unit or machine.
 
@@ -952,14 +967,20 @@ def scp_push(
     else:
         destination = f"{target}:{remote_path}"
 
-    juju.scp(source, destination, scp_options=["-r"])
+    scp_options = ["-r"]
+    if identity_file is not None:
+        scp_options.extend(["-i", str(identity_file)])
+
+    juju.scp(source, destination, scp_options=scp_options)
 
 
 @when(
     flexible(
         r"I copy '{remote_path}' from %(?:machine|unit) '(?P<target>[^']+)'% "
-        r"[to '{local_path}'] " + OPTIONAL_MODEL_CLAUSE
+        r"[to '{local_path}'] "
+        r"[%us(?:e|ing) (?:identity|private key)% file '{identity_file}'] " + OPTIONAL_MODEL_CLAUSE
     ),
+    converters={"identity_file": make_path},
 )
 def scp_pull(
     context: Context,
@@ -967,6 +988,7 @@ def scp_pull(
     target: str,
     local_path: str | None,
     model: str | None,
+    identity_file: Path | None,
 ) -> None:
     """Copy a file or directory from a deployed unit or machine.
 
@@ -982,7 +1004,11 @@ def scp_pull(
     if local_path is None:
         local_path = Path(remote_path).name
 
-    juju.scp(f"{target}:{remote_path}", local_path, scp_options=["-r"])
+    scp_options = ["-r"]
+    if identity_file is not None:
+        scp_options.extend(["-i", str(identity_file)])
+
+    juju.scp(f"{target}:{remote_path}", local_path, scp_options=scp_options)
 
 
 # Checkpoint steps - Attestation and verification.

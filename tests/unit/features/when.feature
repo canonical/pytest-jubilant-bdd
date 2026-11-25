@@ -36,19 +36,19 @@ Feature: Reusable `when` steps
     When I ssh into unit 'slurmctld/0' and I execute 'hostname'
 
   Scenario: SSH into unit and execute command in model
-    When I ssh into unit 'slurmctld/0' and I execute 'hostname' as user 'nobody' in model 'test' and it completes within '45' seconds
+    When I ssh into unit 'slurmctld/0' and I execute 'hostname' as user 'nobody' in model 'test' and it completes within '45' seconds using identity file '/home/ubuntu/.ssh/juju_id_ed25519'
 
   Scenario: Copy file to unit
     When I copy '/tmp/sbatch_sleep_job.sh' to unit 'login/0'
 
   Scenario: Copy file to unit at remote path in model
-    When I copy '/tmp/sbatch_sleep_job.sh' to unit 'login/0' at '/home/ubuntu/sbatch_sleep_job.sh' in model 'test'
+    When I copy '/tmp/sbatch_sleep_job.sh' to unit 'login/0' at '/home/ubuntu/sbatch_sleep_job.sh' in model 'test' using private key file '/home/ubuntu/.ssh/juju_id_ed25519'
 
   Scenario: Copy file from unit
     When I copy '/home/ubuntu/sbatch_sleep_job.sh' from unit 'login/0'
 
   Scenario: Copy file from unit to local path in model
-    When I copy '/home/ubuntu/sbatch_sleep_job.sh' from unit 'login/0' to 'testdata/sbatch_sleep_job.sh' in model 'test'
+    When I copy '/home/ubuntu/sbatch_sleep_job.sh' from unit 'login/0' to 'testdata/sbatch_sleep_job.sh' in model 'test' and use identity file '/home/ubuntu/.ssh/juju_id_ed25519'
 
   Scenario: Copy directory to unit
     When I copy '/tmp/reframe_benchmarks' to unit 'login/0'
