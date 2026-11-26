@@ -18,7 +18,7 @@ Write unit tests for the reusable Gherkin step handlers defined in `src/pytest_j
    - `_main.py` — `Context` fixture (session-scoped) and all step handlers. Note: `Context` is publicly exported from `pytest_jubilant_bdd`; use `from pytest_jubilant_bdd import Context`.
    - `_context.py` — `Context` object, `ModelMapping`, `stack` class. Know the public API: `context.models`, `context.get_juju()`, `context.get_app()`, `context.wait()`, `context.action_results`, `context.exec_results`.
    - `_core.py` — `cli` function for running host commands (for example `charmcraft pack`) with output streamed to the user's console by default; `cli` is publicly exported from `pytest_jubilant_bdd`.
-   - `_parsers.py` — `flexible` parser, `make_list`, `make_dict` converters, `%...%` block syntax.
+   - `_parsers.py` — `flexible` parser, `make_list`, `make_dict`, `make_path` converters, `%...%` block syntax.
    - `_assertions.py` — `assertions.app`, `assertions.model`, `assertions.unit` assertion classes.
    - `_constants.py` — `AgentStatus`, `WorkloadStatus`, flag names, status capture group patterns.
     - `errors.py` — Custom exception classes (`AppNotFoundError`, `ModelNotFoundError`, `TooManyDeployedAppsError`, `WaitError`).

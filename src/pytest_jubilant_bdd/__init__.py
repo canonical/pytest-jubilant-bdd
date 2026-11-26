@@ -26,10 +26,11 @@ __all__ = [
     "flexible",
     "make_dict",
     "make_list",
+    "make_path",
     "make_storage_directive",
 ]
 
 from ._assertions import assertions
 from ._context import Context
 from ._core import cli, command_as_user
-from ._parsers import flexible, make_dict, make_list, make_storage_directive
+from ._parsers import flexible, make_dict, make_list, make_path, make_storage_directive

@@ -98,6 +98,14 @@ def fake_source_dir(fs: FakeFilesystem) -> str:
     return path
 
 
+@pytest.fixture(scope="function")
+def fake_identity_file(fs: FakeFilesystem) -> str:
+    """Create a fake private SSH key file on the pyfakefs filesystem."""
+    path = "/home/ubuntu/.ssh/juju_id_ed25519"
+    fs.create_file(path, contents="-----BEGIN OPENSSH PRIVATE KEY-----\n...\n")
+    return path
+
+
 class TestRunAction:
     """Test the ``run_action`` *When* step handler."""
 
@@ -265,8 +273,10 @@ class TestRunSSH:
 
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "SSH into unit and execute command in model")
-    def test_with_optionals(context: Context, mock_subprocess_run: MagicMock) -> None:
-        """Test ``run_ssh`` with the optional ``in model`` clause."""
+    def test_with_optionals(
+        context: Context, mock_subprocess_run: MagicMock, fake_identity_file: str
+    ) -> None:
+        """Test ``run_ssh`` with all optional clauses."""
         ssh_calls = [
             call
             for call in mock_subprocess_run.call_args_list
@@ -277,7 +287,12 @@ class TestRunSSH:
         call_args = ssh_calls[0].args[0]
         assert "--model" in call_args
         assert f"test-{MODEL_SUFFIX}" in call_args
-        assert call_args[-2:] == ["slurmctld/0", "sudo -u nobody sh -c hostname"]
+        assert call_args[-4:] == [
+            "slurmctld/0",
+            "-i",
+            fake_identity_file,
+            "sudo -u nobody sh -c hostname",
+        ]
 
         assert ssh_calls[0].kwargs["timeout"] == 45.0
 
@@ -292,7 +307,7 @@ class TestRunSSH:
         )
 
         with pytest.raises(TimeoutError, match="did not complete within 30"):
-            run_ssh(context, "unit", "slurmctld/0", "hostname", None, wait=30.0)
+            run_ssh(context, "unit", "slurmctld/0", "hostname", None, None, 30.0, None)
 
 
 class TestScpPush:
@@ -313,7 +328,9 @@ class TestScpPush:
 
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file to unit at remote path in model")
-    def test_with_optionals(mock_subprocess_run: MagicMock, fake_source_file: str) -> None:
+    def test_with_optionals(
+        mock_subprocess_run: MagicMock, fake_source_file: str, fake_identity_file: str
+    ) -> None:
         """Test ``scp_push`` with all optional clauses."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
@@ -322,6 +339,8 @@ class TestScpPush:
             f"test-{MODEL_SUFFIX}",
             "--",
             "-r",
+            "-i",
+            fake_identity_file,
             fake_source_file,
             "login/0:/home/ubuntu/sbatch_sleep_job.sh",
         ]
@@ -355,7 +374,7 @@ class TestScpPush:
     def test_raises_when_source_missing(self, context: Context) -> None:
         """``scp`` raises when the local source path does not exist."""
         with pytest.raises(FileNotFoundError, match="Source not found: '/does/not/exist'"):
-            scp_push(context, "/does/not/exist", "login/0", None, None)
+            scp_push(context, "/does/not/exist", "login/0", None, None, None)
 
 
 class TestScpPull:
@@ -376,7 +395,9 @@ class TestScpPull:
 
     @staticmethod
     @scenario(REUSABLE_WHEN_STEP_TESTS, "Copy file from unit to local path in model")
-    def test_with_optionals(mock_subprocess_run: MagicMock, fs: FakeFilesystem) -> None:
+    def test_with_optionals(
+        mock_subprocess_run: MagicMock, fs: FakeFilesystem, fake_identity_file: str
+    ) -> None:
         """Test ``scp_pull`` with all optional clauses."""
         assert mock_subprocess_run.call_args[0][0] == [
             "juju",
@@ -385,6 +406,8 @@ class TestScpPull:
             f"test-{MODEL_SUFFIX}",
             "--",
             "-r",
+            "-i",
+            fake_identity_file,
             "login/0:/home/ubuntu/sbatch_sleep_job.sh",
             "testdata/sbatch_sleep_job.sh",
         ]

@@ -143,12 +143,12 @@ handler is registered under.
 | `I run action '{action}' on unit[s] '{u1}', '{u2}', and '{u3}' [with parameters '{k=v ...}'] [in model '{model}'] [within '{wait}' seconds]` | `run_action` | `context.action_results` |
 | `I execute '{command}' on machine[s] '{m1}' and '{m2}' [as user '{user}'] [in model '{model}'] [within '{wait}' seconds]` | `run_exec` | `context.exec_results` |
 | `I execute '{command}' on unit[s] '{u1}' and '{u2}' [as user '{user}'] [in model '{model}'] [within '{wait}' seconds]` | `run_exec` | `context.exec_results` |
-| `I ssh into machine '{m}' and I execute '{command}' [as user '{user}'] [in model '{model}'] [within '{wait}' seconds]` | `run_ssh` | `context.ssh_results` |
-| `I ssh into unit '{u}' and I execute '{command}' [as user '{user}'] [in model '{model}'] [within '{wait}' seconds]` | `run_ssh` | `context.ssh_results` |
-| `I copy '{source}' to machine '{m}' [at '{remote_path}'] [in model '{model}']` | `scp_push` | — |
-| `I copy '{source}' to unit '{unit}' [at '{remote_path}'] [in model '{model}']` | `scp_push` | — |
-| `I copy '{remote_path}' from machine '{m}' [to '{local_path}'] [in model '{model}']` | `scp_pull` | — |
-| `I copy '{remote_path}' from unit '{unit}' [to '{local_path}'] [in model '{model}']` | `scp_pull` | — |
+| `I ssh into machine '{m}' and I execute '{command}' [as user '{user}'] [in model '{model}'] [within '{wait}' seconds] [us(e|ing) (identity|private key) file '{file}']` | `run_ssh` | `context.ssh_results` |
+| `I ssh into unit '{u}' and I execute '{command}' [as user '{user}'] [in model '{model}'] [within '{wait}' seconds] [us(e|ing) (identity|private key) file '{file}']` | `run_ssh` | `context.ssh_results` |
+| `I copy '{source}' to machine '{m}' [at '{remote_path}'] [in model '{model}'] [us(e|ing) (identity|private key) file '{file}']` | `scp_push` | — |
+| `I copy '{source}' to unit '{unit}' [at '{remote_path}'] [in model '{model}'] [us(e|ing) (identity|private key) file '{file}']` | `scp_push` | — |
+| `I copy '{remote_path}' from machine '{m}' [to '{local_path}'] [in model '{model}'] [us(e|ing) (identity|private key) file '{file}']` | `scp_pull` | — |
+| `I copy '{remote_path}' from unit '{unit}' [to '{local_path}'] [in model '{model}'] [us(e|ing) (identity|private key) file '{file}']` | `scp_pull` | — |
 
 Notes:
 
@@ -169,6 +169,13 @@ Notes:
   `juju ssh` connects as the `ubuntu` user, and both have passwordless
   `sudo` access. Useful for security testing that simulates unprivileged
   users.
+- The optional `us(e|ing) (identity|private key) file '{file}'` clause on
+  `run_ssh`, `scp_push`, and `scp_pull` passes a custom private SSH
+  key/identity file to the underlying OpenSSH (`run_ssh`) or `scp`
+  (`scp_push`, `scp_pull`) client through its `-i` option, instead of the
+  default key-pair created by Juju. The `make_path` converter verifies the
+  file exists when the step is parsed and raises `FileNotFoundError` when
+  it does not.
 
 ### Checkpoints (attestation)
 
@@ -212,7 +219,9 @@ Notes:
   `to '{local_path}'` is omitted. Both handlers always pass `-r` to the
   scp client, so directories are transferred recursively; `-r` has no
   effect on plain files. Both handlers accept a machine ID as the target
-  in addition to a unit name.
+  in addition to a unit name. Both handlers also accept the optional
+  `us(e|ing) (identity|private key) file '{file}'` clause (see the *When*
+  notes above).
 - `wait_for` accepts fractional values (for example `'2.5'`).
 
 ## pytest-jubilant-bdd framework facts
@@ -223,7 +232,8 @@ Notes:
   handlers** — only the public API below.
 - **Public API** (`from pytest_jubilant_bdd import ...`): `Context`,
   `assertions`, `cli`, `command_as_user`, `flexible`, `make_dict`,
-  `make_list`, `make_storage_directive`. `Context` is the fixture type;
+  `make_list`, `make_path`, `make_storage_directive`. `Context` is the
+  fixture type;
   `cli` runs host commands with output streamed to the user's console;
   `command_as_user` wraps a command as `sudo -u <user> sh -c <command>` so
   it runs as an unprivileged user; the rest are helpers for authoring

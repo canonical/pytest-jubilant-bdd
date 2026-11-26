@@ -790,16 +790,6 @@ class TestDeployLocal:
         ):
             deploy_local(context, "slurmctld", None, None, None, None, 1, None, {}, {}, {})
 
-    def test_raises_when_path_missing(self, context: Context) -> None:
-        """``deploy_local`` raises when the supplied path is not a file."""
-        nonexistent = Path("/nonexistent/does-not-exist.charm")
-
-        with pytest.raises(
-            FileNotFoundError,
-            match=f"Charm not found: '{nonexistent}' is not a file",
-        ):
-            deploy_local(context, "slurmctld", nonexistent, None, None, None, 1, None, {}, {}, {})
-
 
 class TestCreateOffer:
     """Test the ``create_offer`` *Given* step handler."""

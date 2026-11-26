@@ -107,7 +107,7 @@ The conjunction is consumed by the clause that follows it, so clauses remain reo
 ```python
 converters={
     "num_units": lambda v: int(v) if v is not None else 1,
-    "path": lambda v: Path(v) if v is not None else v,
+    "path": make_path,
     "units": make_list,
     "params": make_dict,
 }
@@ -117,6 +117,10 @@ Built-in converters in `_parsers.py`:
 
 - `make_list` — parses `'a', 'b', and 'c'` into `['a', 'b', 'c']`. Returns `[]` for `None`.
 - `make_dict` — parses `k=v k2=v2` into `{'k': 'v', 'k2': 'v2'}`. Returns `{}` for `None`.
+- `make_path` — converts a path string to a `pathlib.Path` and verifies it
+  exists, raising `FileNotFoundError` when it does not. Returns `None` for
+  `None`. Because the check runs at step-parse time, a missing path fails
+  the step before the handler body runs.
 
 ### Testing implications
 

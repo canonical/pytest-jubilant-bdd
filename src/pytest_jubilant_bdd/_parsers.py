@@ -14,10 +14,11 @@
 
 """Custom ``pytest-bdd`` parsers."""
 
-__all__ = ["flexible", "make_dict", "make_list", "make_storage_directive"]
+__all__ = ["flexible", "make_dict", "make_list", "make_path", "make_storage_directive"]
 
 import ast
 import re
+from pathlib import Path
 from typing import Any
 
 from pytest_bdd.parsers import StepParser
@@ -224,6 +225,22 @@ def make_list(value: str | None) -> list[Any]:
 
     matches = re.findall(r"'([^']+)'", value)
     return [autocast(match) for match in matches]
+
+
+def make_path(value: str | None) -> Path | None:
+    """Make a :class:``Path`` object from a string.
+
+    Raises:
+        FileNotFoundError: Raised if the provided path doesn't exist on the system.
+    """
+    if value is None:
+        return None
+
+    path = Path(value)
+    if not path.exists():
+        raise FileNotFoundError(f"File or directory not found: '{path}'.")
+
+    return path
 
 
 def make_storage_directive(value: str | None) -> dict[str, str]:
